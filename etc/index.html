@@ -184,7 +184,7 @@
       <div class="n">1</div>
       <div class="txt">
         <h3>Use benchmark datasets, not new collections.</h3>
-        <p>A shared benchmark lets you separate two things: how much of a score is your classifier being good, and how much is just a property of your test set. A fresh, private collection cannot tell them apart; a high number might be a strong model, or it might be a dataset stuffed with easy wake.</p>
+        <p>A shared benchmark lets you separate two things: how much of a score is your classifier being good, and how much is just a property of your test set.</p>
       </div>
     </div>
 
@@ -192,7 +192,7 @@
       <div class="n">2</div>
       <div class="txt">
         <h3>Run a simple classifier first.</h3>
-        <p>Before crediting the architecture, see what a trivial baseline scores on the same data. Your complex algorithm might not be doing that much better; and if it isn't, the headline number was mostly the dataset all along.</p>
+        <p>Before crediting the architecture, see what a trivial baseline scores on the same data. Your complex algorithm might not be doing that much better.</p>
       </div>
     </div>
   </section>
@@ -215,24 +215,24 @@
     for(let i=-r;i<=r;i++){ const v=Math.exp(-(i*i)/(2*s*s)); k.push(v); sum+=v; }
     return x.map((_,i)=>{ let a=0; for(let j=-r;j<=r;j++){ const idx=Math.min(x.length-1,Math.max(0,i+j)); a+=x[idx]*k[j+r]; } return a/sum; });
   }
-  const SIGMA=2;
+  // ---- Poisson sampler (Knuth) for the wake-activity block, as in etc_demo.py ----
+  function poisson(lam){ const L=Math.exp(-lam); let k=0,p=1; do{ k++; p*=rng(); }while(p>L); return k-1; }
 
-  // ---- build one synthetic night: activity = movement, label = true wake ----
-  // sleep is mostly quiet with occasional movement blips; true wake is elevated
-  // but overlaps the blips, so a movement-only classifier is good, not perfect.
-  const NIGHT=420;
-  const night=[], nightLabel=[];
-  for(let i=0;i<NIGHT;i++){
-    const wake = rng()<0.13 ? 1 : 0;
-    let a;
-    if(wake){ a = 2 + rng()*3.5; }
-    else { a = rng()*1.4; if(rng()<0.09) a += 2.5 + rng()*4; }   // sleep movement blip
-    night.push(a); nightLabel.push(wake);
-  }
-  // block of easy-to-classify wake: sustained, clearly above anything in the night
+  // ---- build one synthetic night, following etc_demo.py ----
+  // sleep is 8h of essentially zero motion, punctuated by sparse sudden movement
+  // spikes (about one every 45 min).
+  const NIGHT=480;
+  const night=new Array(NIGHT).fill(0);
+  for(let i=0;i<NIGHT;i++){ if(rng()<0.03) night[i]=3+rng()*5; }
+  // ground truth (computed once): smooth the motion, add a few extra blips, then
+  // threshold. The classifier below is scored against this and never sees it.
+  const smoothed=gauss(night,2);
+  for(let b=0;b<3;b++){ const pos=Math.floor(rng()*smoothed.length); smoothed[pos]+=3+rng()*5; }
+  const nightLabel=smoothed.map(v=> v>1.75 ? 1 : 0);
+  // block of easy-to-classify wake: sustained high movement (Poisson, like the script)
   const MAXW=120;
   const wakeBlock=[];
-  for(let i=0;i<MAXW;i++) wakeBlock.push(9 + rng()*4);
+  for(let i=0;i<MAXW;i++) wakeBlock.push(poisson(8));
 
   // ---- AUROC via average-rank (Mann-Whitney) ----
   function auroc(scores, labels){
@@ -247,9 +247,9 @@
     if(nPos===0||nNeg===0) return 1;
     return (sumPos - nPos*(nPos+1)/2)/(nPos*nNeg);
   }
-  // smoothed activity for a given amount of prepended wake, plus its labels
+  // classifier score = raw movement (movement means wake), plus the labels
   function recordAt(w){
-    const activity = gauss(wakeBlock.slice(0,w).concat(night), SIGMA);
+    const activity = wakeBlock.slice(0,w).concat(night);
     const labels = new Array(w).fill(1).concat(nightLabel);
     return {activity, labels};
   }
@@ -261,11 +261,11 @@
 
   // ================= MOTION FIGURE (left) =================
   const motion=document.getElementById('motion');
-  const MX0=44, MX1=604, MY0=22, MY1=200, YMAX=13;
+  const MX0=44, MX1=604, MY0=22, MY1=200, YMAX=16;
   // static scaffolding
   motion.appendChild(el('line',{class:'axis',x1:MX0,y1:MY1,x2:MX1,y2:MY1}));
   motion.appendChild(el('line',{class:'axis',x1:MX0,y1:MY0,x2:MX0,y2:MY1}));
-  (function(){ const t=el('text',{class:'axlab',x:MX0-8,y:MY0+6,'text-anchor':'end'}); t.textContent='move'; motion.appendChild(t);
+  (function(){ const t=el('text',{class:'axlab',x:MX0-8,y:MY0+6,'text-anchor':'end'}); t.textContent='motion'; motion.appendChild(t);
     const t2=el('text',{class:'axlab',x:MX0-8,y:MY1,'text-anchor':'end'}); t2.textContent='still'; motion.appendChild(t2);
     const t3=el('text',{class:'axlab',x:(MX0+MX1)/2,y:MY1+34,'text-anchor':'middle'}); t3.textContent='time across the record'; motion.appendChild(t3); })();
   // dynamic layers (created once, updated on input)
