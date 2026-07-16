@@ -9,16 +9,18 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
 <style>
   :root{
-    --bg:#0c0e13;
-    --bg-soft:#11141b;
-    --ink:#eef1f6;
-    --ink-dim:#9aa3b2;
-    --ink-faint:#5b6472;
-    --line:#222733;
-    --wake:#fbbf24;       /* easy-to-classify wake */
-    --sleep:#4c9bf5;      /* the real night */
-    --accent:#fbbf24;
-    --maxw:820px;
+    --bg:#f7f6f2;
+    --surface:#ffffff;
+    --ink:#1b1e24;
+    --ink-dim:#4b5563;
+    --ink-faint:#98a1af;
+    --line:#e5e7eb;
+    --line-soft:#eef0f3;
+    --wake:#e07b00;          /* easy-to-classify wake accent */
+    --wake-soft:#fdefd8;     /* prepended-region fill */
+    --motion:#0e7c86;        /* activity / movement trace */
+    --accent:#e07b00;
+    --maxw:900px;
     --mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;
   }
   *{box-sizing:border-box}
@@ -32,11 +34,11 @@
   b{color:var(--ink);font-weight:600}
 
   /* ---------- HERO ---------- */
-  .hero{min-height:88vh;display:flex;flex-direction:column;justify-content:center;position:relative;overflow:hidden;padding:14vh 0 8vh}
-  .hero-roc{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;opacity:.32}
-  .hero-roc svg{width:min(90vh,120vw);height:auto}
+  .hero{min-height:80vh;display:flex;flex-direction:column;justify-content:center;position:relative;overflow:hidden;padding:14vh 0 8vh}
+  .hero-roc{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;opacity:.06}
+  .hero-roc svg{width:min(80vh,110vw);height:auto}
   .roc-path{fill:none;stroke:var(--accent);stroke-width:2.5;stroke-linecap:round;stroke-dasharray:1400;stroke-dashoffset:1400;animation:draw 2.4s ease-out forwards}
-  .roc-diag{stroke:var(--line);stroke-width:1.5;stroke-dasharray:5 7}
+  .roc-diag{stroke:var(--ink-faint);stroke-width:1.5;stroke-dasharray:5 7}
   @keyframes draw{to{stroke-dashoffset:0}}
   .hero-inner{position:relative;width:100%}
   .eyebrow{font-size:13px;letter-spacing:.22em;text-transform:uppercase;color:var(--ink-faint);margin-bottom:22px;font-weight:600}
@@ -53,64 +55,61 @@
   .band p:last-child{margin-bottom:0}
 
   /* ---------- INTERACTIVE ---------- */
-  .tryit{background:var(--bg-soft);border-top:1px solid var(--line);border-bottom:1px solid var(--line);padding:9vh 0}
+  .tryit{background:var(--surface);border-top:1px solid var(--line);border-bottom:1px solid var(--line);padding:9vh 0}
   .tryit .kick{font-size:13px;letter-spacing:.16em;text-transform:uppercase;color:var(--accent);font-weight:600;margin-bottom:14px}
   .tryit h2{font-weight:700;font-size:clamp(24px,3.4vw,36px);line-height:1.15;margin:0 0 16px;letter-spacing:-.01em}
-  .tryit .intro{font-size:clamp(17px,2vw,20px);color:var(--ink-dim);max-width:34em;margin:0 0 40px}
+  .tryit .intro{font-size:clamp(17px,2vw,20px);color:var(--ink-dim);max-width:36em;margin:0 0 40px}
 
-  .panel{border:1px solid var(--line);border-radius:16px;background:#0e1118;padding:28px 30px}
+  .panel{border:1px solid var(--line);border-radius:16px;background:var(--surface);padding:26px 26px;box-shadow:0 1px 2px rgba(16,24,40,.04)}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:34px;align-items:start}
 
-  /* night strip */
-  .striplab{display:flex;justify-content:space-between;font-size:12px;color:var(--ink-faint);font-family:var(--mono);margin-bottom:8px}
-  .strip{display:flex;height:44px;border-radius:8px;overflow:hidden;border:1px solid var(--line);background:#0a0c11}
-  .strip .segwake{background:repeating-linear-gradient(135deg,var(--wake),var(--wake) 6px,#e0a91f 6px,#e0a91f 12px);transition:width .18s ease;min-width:0}
-  .strip .segnight{background:linear-gradient(180deg,#1a2740,#16233a);flex:1;position:relative}
-  .strip .segnight::after{content:"";position:absolute;inset:0;background:
-    radial-gradient(circle at 18% 60%,rgba(76,155,245,.55) 0 2px,transparent 3px),
-    radial-gradient(circle at 44% 40%,rgba(76,155,245,.5) 0 2px,transparent 3px),
-    radial-gradient(circle at 71% 66%,rgba(76,155,245,.55) 0 2px,transparent 3px),
-    radial-gradient(circle at 88% 45%,rgba(76,155,245,.45) 0 2px,transparent 3px)}
-  .striptags{display:flex;justify-content:space-between;font-size:12.5px;margin-top:9px}
-  .striptags .tw{color:var(--wake);font-weight:600}
-  .striptags .tn{color:var(--sleep);font-weight:600}
+  .pane{min-width:0}
+  .pane .ptitle{font-size:12px;letter-spacing:.13em;text-transform:uppercase;color:var(--ink-faint);font-weight:600;margin-bottom:12px}
+  svg.fig{width:100%;height:auto;display:block;font-family:"Inter",sans-serif}
+  .fig .axlab{font-size:12px;fill:var(--ink-faint)}
+  .fig .axis{stroke:var(--line);stroke-width:1}
+  .fig .grid-l{stroke:var(--line-soft);stroke-width:1}
 
-  .controls{display:flex;gap:34px;align-items:center;flex-wrap:wrap;margin-top:30px}
-  .sliderbox{flex:1 1 300px;min-width:260px}
-  .sliderbox label{display:block;font-size:13px;color:var(--ink-dim);margin-bottom:12px}
-  .sliderbox label b{color:var(--wake);font-family:var(--mono)}
-  input[type=range]{width:100%;accent-color:var(--wake);height:22px}
-  .readout{flex:0 0 auto;text-align:right;min-width:150px}
-  .readout .rlab{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-faint);font-weight:600;margin-bottom:4px}
-  .readout .rnum{font-family:var(--mono);font-size:clamp(38px,7vw,54px);font-weight:600;line-height:1;color:var(--accent);font-variant-numeric:tabular-nums}
-  .readout .rsub{font-size:12.5px;color:var(--ink-faint);margin-top:6px;font-family:var(--mono)}
+  /* motion pane */
+  .motion-area{fill:rgba(14,124,134,.14)}
+  .motion-line{fill:none;stroke:var(--motion);stroke-width:1.6;stroke-linejoin:round;stroke-linecap:round}
+  .wake-rect{fill:var(--wake-soft)}
+  .wake-edge{stroke:var(--wake);stroke-width:1.2;stroke-dasharray:3 3}
+  .wake-tag{font-size:11.5px;font-weight:600;fill:var(--wake);paint-order:stroke;stroke:var(--surface);stroke-width:3px;stroke-linejoin:round}
 
-  .chartwrap{margin-top:34px}
-  .chartwrap .ctitle{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-faint);font-weight:600;margin-bottom:14px}
-  .auroc-chart{width:100%;height:auto;font-family:"Inter",sans-serif}
-  .auroc-chart .grid{stroke:var(--line);stroke-width:1}
-  .auroc-chart .curve{fill:none;stroke:var(--accent);stroke-width:2.5;stroke-linecap:round}
-  .auroc-chart .axlab{font-size:12px;fill:var(--ink-faint)}
-  .auroc-chart .dot{fill:var(--accent)}
-  .auroc-chart .dotline{stroke:var(--ink-faint);stroke-width:1;stroke-dasharray:3 4}
+  /* auroc pane */
+  .auroc-curve{fill:none;stroke:var(--accent);stroke-width:2.5;stroke-linecap:round}
+  .auroc-dot{fill:var(--accent)}
+  .auroc-dotline{stroke:var(--ink-faint);stroke-width:1;stroke-dasharray:3 4}
+
+  .readout{display:flex;align-items:baseline;gap:12px;margin-bottom:10px}
+  .readout .rnum{font-family:var(--mono);font-size:clamp(34px,6vw,46px);font-weight:600;line-height:1;color:var(--accent);font-variant-numeric:tabular-nums}
+  .readout .rlab{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-faint);font-weight:600}
+  .readout .rsub{font-size:12.5px;color:var(--ink-faint);font-family:var(--mono)}
+
+  .controls{margin-top:26px;padding-top:22px;border-top:1px solid var(--line)}
+  .controls label{display:block;font-size:14px;color:var(--ink-dim);margin-bottom:12px}
+  .controls label b{color:var(--wake);font-family:var(--mono)}
+  input[type=range]{width:100%;accent-color:var(--wake);height:24px}
+  .cap{font-size:12.5px;color:var(--ink-faint);font-family:var(--mono);margin-top:8px}
 
   /* ---------- SOLUTION ---------- */
   .solution{padding:10vh 0 12vh}
   .solution h2{font-weight:700;font-size:clamp(24px,3.4vw,36px);line-height:1.15;margin:0 0 34px;letter-spacing:-.01em}
   .sol{display:flex;gap:20px;margin-bottom:26px;align-items:flex-start}
-  .sol .n{flex:0 0 auto;width:34px;height:34px;border-radius:9px;border:1px solid var(--line);display:flex;align-items:center;justify-content:center;font-family:var(--mono);color:var(--accent);font-size:15px;font-weight:600;margin-top:3px}
+  .sol .n{flex:0 0 auto;width:34px;height:34px;border-radius:9px;border:1px solid var(--line);background:var(--surface);display:flex;align-items:center;justify-content:center;font-family:var(--mono);color:var(--accent);font-size:15px;font-weight:600;margin-top:3px}
   .sol .txt{flex:1}
   .sol .txt h3{font-weight:600;font-size:clamp(18px,2.3vw,22px);margin:0 0 8px;color:var(--ink)}
   .sol .txt p{margin:0;color:var(--ink-dim);font-size:clamp(16px,1.9vw,18px)}
 
   .endnote{padding:7vh 0 12vh;border-top:1px solid var(--line)}
-  .endnote p{color:var(--ink-faint);font-size:14px;max-width:42em;margin:0}
+  .endnote p{color:var(--ink-faint);font-size:14px;max-width:44em;margin:0}
   .endnote a{color:var(--ink-dim)}
 
-  @media(max-width:640px){
+  @media(max-width:720px){
     body{font-size:16px}
-    .panel{padding:22px 18px}
-    .controls{gap:20px}
-    .readout{text-align:left}
+    .grid{grid-template-columns:1fr;gap:30px}
+    .panel{padding:20px 16px}
   }
 </style>
 </head>
@@ -135,7 +134,7 @@
   <section class="band wrap">
     <h2>What "easy-to-classify wake" means</h2>
     <p>Easy-to-classify wake is just what it sounds like: wake that no classifier would ever mess up because it's so obvious. Think lots of visible movement, over a sustained period of time.</p>
-    <p>A sleep classifier can look artificially good on a dataset if that dataset has <b>a lot of easy-to-classify wake</b>. The score goes up, but not because the model got smarter &mdash; the data just got easier.</p>
+    <p>A sleep classifier can look artificially good on a dataset if that dataset has <b>a lot of easy-to-classify wake</b>. The score goes up, but not because the model got smarter; the data just got easier.</p>
   </section>
 
   <!-- ============ TRY IT ============ -->
@@ -143,34 +142,35 @@
     <div class="wrap">
       <div class="kick">Try it yourself</div>
       <h2>Add easy wake, watch the score climb</h2>
-      <p class="intro">Below is one synthetic night. Drag the slider to prepend easy-to-classify (ETC) wake &mdash; a block of obvious, high-movement wake &mdash; to the front of it. The classifier never changes. Only the amount of trivial wake does.</p>
+      <p class="intro">Below is one synthetic night, scored by a movement-is-wake classifier. Drag the slider to prepend easy-to-classify (ETC) wake (a block of obvious, sustained movement) to the front of the record. The classifier never changes; only the amount of trivial wake does.</p>
 
       <div class="panel">
-        <div class="striplab"><span>the record the classifier is scored on</span><span id="strippct">0% easy wake</span></div>
-        <div class="strip">
-          <div class="segwake" id="segwake" style="width:0%"></div>
-          <div class="segnight"></div>
-        </div>
-        <div class="striptags">
-          <span class="tw">prepended easy-to-classify wake</span>
-          <span class="tn">the real night</span>
+        <div class="grid">
+
+          <!-- LEFT: the night / motion -->
+          <div class="pane">
+            <div class="ptitle">The record the classifier is scored on</div>
+            <svg class="fig" viewBox="0 0 620 250" id="motion" aria-label="Movement trace: a quiet night with a block of obvious wake prepended to the front"></svg>
+          </div>
+
+          <!-- RIGHT: the AUROC curve -->
+          <div class="pane">
+            <div class="ptitle">The score it earns</div>
+            <div class="readout">
+              <span class="rnum" id="auroc">0.000</span>
+              <span class="rlab">AUROC</span>
+            </div>
+            <div class="rsub" id="delta" style="margin-bottom:14px">baseline</div>
+            <svg class="fig" viewBox="0 0 620 250" id="chart" aria-label="Line chart of AUROC rising as easy-to-classify wake is prepended"></svg>
+          </div>
+
         </div>
 
+        <!-- shared control -->
         <div class="controls">
-          <div class="sliderbox">
-            <label>Easy-to-classify wake prepended: <b id="wlab">0</b> min</label>
-            <input type="range" id="slider" min="0" max="120" step="1" value="0" />
-          </div>
-          <div class="readout">
-            <div class="rlab">AUROC</div>
-            <div class="rnum" id="auroc">0.000</div>
-            <div class="rsub" id="delta">baseline</div>
-          </div>
-        </div>
-
-        <div class="chartwrap">
-          <div class="ctitle">AUROC vs. easy wake prepended</div>
-          <svg class="auroc-chart" viewBox="0 0 640 260" id="chart" aria-label="Line chart of AUROC rising as easy-to-classify wake is prepended"></svg>
+          <label>Easy-to-classify wake prepended: <b id="wlab">0</b> min</label>
+          <input type="range" id="slider" min="0" max="120" step="1" value="0" />
+          <div class="cap" id="cap">0% of the record is trivially-classifiable wake</div>
         </div>
       </div>
     </div>
@@ -184,7 +184,7 @@
       <div class="n">1</div>
       <div class="txt">
         <h3>Use benchmark datasets, not new collections.</h3>
-        <p>A shared benchmark lets you separate how much of a score is your classifier being good from how much is just a property of your test set. A fresh, private collection can't tell those two apart &mdash; a high number might be a strong model, or it might be a dataset stuffed with easy wake.</p>
+        <p>A shared benchmark lets you separate two things: how much of a score is your classifier being good, and how much is just a property of your test set. A fresh, private collection cannot tell them apart; a high number might be a strong model, or it might be a dataset stuffed with easy wake.</p>
       </div>
     </div>
 
@@ -192,7 +192,7 @@
       <div class="n">2</div>
       <div class="txt">
         <h3>Run a simple classifier first.</h3>
-        <p>Before crediting the architecture, see what a trivial baseline scores on the same data. Your complex algorithm might not be doing that much better &mdash; and if it isn't, the headline number was mostly the dataset all along.</p>
+        <p>Before crediting the architecture, see what a trivial baseline scores on the same data. Your complex algorithm might not be doing that much better; and if it isn't, the headline number was mostly the dataset all along.</p>
       </div>
     </div>
   </section>
@@ -202,103 +202,132 @@
   </section>
 
 <script>
+  const NS='http://www.w3.org/2000/svg';
+  function el(tag,attrs){const e=document.createElementNS(NS,tag);for(const k in attrs)e.setAttribute(k,attrs[k]);return e;}
+
   // ---- seeded RNG (deterministic so the demo is stable across reloads) ----
   function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};}
   const rng = mulberry32(7);
 
-  // ---- build one synthetic night: score = movement, label = true wake ----
-  const NIGHT = 420;
-  const nightScore = [], nightLabel = [];
-  for(let i=0;i<NIGHT;i++){
-    const wake = rng() < 0.14 ? 1 : 0;              // ~14% true wake within the night
-    const s = wake ? 1.2 + rng()*5 : rng()*5;       // heavily overlapping -> imperfect classifier
-    nightScore.push(s); nightLabel.push(wake);
+  // ---- 1D gaussian smoothing (matches the smoothing in etc_demo.py) ----
+  function gauss(x, s){
+    const r=Math.ceil(s*3), k=[]; let sum=0;
+    for(let i=-r;i<=r;i++){ const v=Math.exp(-(i*i)/(2*s*s)); k.push(v); sum+=v; }
+    return x.map((_,i)=>{ let a=0; for(let j=-r;j<=r;j++){ const idx=Math.min(x.length-1,Math.max(0,i+j)); a+=x[idx]*k[j+r]; } return a/sum; });
   }
-  // block of easy-to-classify wake: clearly higher than anything in the night
-  const MAXW = 120;
-  const wakeBlock = [];
-  for(let i=0;i<MAXW;i++) wakeBlock.push(10 + rng()*4);
+  const SIGMA=2;
+
+  // ---- build one synthetic night: activity = movement, label = true wake ----
+  // sleep is mostly quiet with occasional movement blips; true wake is elevated
+  // but overlaps the blips, so a movement-only classifier is good, not perfect.
+  const NIGHT=420;
+  const night=[], nightLabel=[];
+  for(let i=0;i<NIGHT;i++){
+    const wake = rng()<0.13 ? 1 : 0;
+    let a;
+    if(wake){ a = 2 + rng()*3.5; }
+    else { a = rng()*1.4; if(rng()<0.09) a += 2.5 + rng()*4; }   // sleep movement blip
+    night.push(a); nightLabel.push(wake);
+  }
+  // block of easy-to-classify wake: sustained, clearly above anything in the night
+  const MAXW=120;
+  const wakeBlock=[];
+  for(let i=0;i<MAXW;i++) wakeBlock.push(9 + rng()*4);
 
   // ---- AUROC via average-rank (Mann-Whitney) ----
   function auroc(scores, labels){
-    const n = scores.length;
-    const order = [...Array(n).keys()].sort((a,b)=>scores[a]-scores[b]);
-    const rank = new Array(n);
-    let i=0;
-    while(i<n){
-      let j=i;
-      while(j+1<n && scores[order[j+1]]===scores[order[i]]) j++;
-      const avg=(i+j)/2+1;
-      for(let k=i;k<=j;k++) rank[order[k]]=avg;
-      i=j+1;
-    }
+    const n=scores.length;
+    const order=[...Array(n).keys()].sort((a,b)=>scores[a]-scores[b]);
+    const rank=new Array(n); let i=0;
+    while(i<n){ let j=i; while(j+1<n && scores[order[j+1]]===scores[order[i]]) j++;
+      const avg=(i+j)/2+1; for(let k=i;k<=j;k++) rank[order[k]]=avg; i=j+1; }
     let sumPos=0,nPos=0;
     for(let k=0;k<n;k++){ if(labels[k]===1){ sumPos+=rank[k]; nPos++; } }
     const nNeg=n-nPos;
     if(nPos===0||nNeg===0) return 1;
     return (sumPos - nPos*(nPos+1)/2)/(nPos*nNeg);
   }
-
-  function aurocAt(w){
-    const scores = wakeBlock.slice(0,w).concat(nightScore);
+  // smoothed activity for a given amount of prepended wake, plus its labels
+  function recordAt(w){
+    const activity = gauss(wakeBlock.slice(0,w).concat(night), SIGMA);
     const labels = new Array(w).fill(1).concat(nightLabel);
-    return auroc(scores, labels);
+    return {activity, labels};
   }
 
-  // precompute the full curve once
-  const curve = [];
-  for(let w=0;w<=MAXW;w++) curve.push(aurocAt(w));
+  // precompute the AUROC curve once
+  const curve=[];
+  for(let w=0;w<=MAXW;w++){ const {activity,labels}=recordAt(w); curve.push(auroc(activity,labels)); }
+  const base=curve[0];
 
-  // ---- chart geometry ----
-  const CH = {x0:56, x1:616, y0:24, y1:210, ymin:0.5, ymax:1.0};
-  const xOf = w => CH.x0 + (w/MAXW)*(CH.x1-CH.x0);
-  const yOf = a => CH.y1 - ((a-CH.ymin)/(CH.ymax-CH.ymin))*(CH.y1-CH.y0);
+  // ================= MOTION FIGURE (left) =================
+  const motion=document.getElementById('motion');
+  const MX0=44, MX1=604, MY0=22, MY1=200, YMAX=13;
+  // static scaffolding
+  motion.appendChild(el('line',{class:'axis',x1:MX0,y1:MY1,x2:MX1,y2:MY1}));
+  motion.appendChild(el('line',{class:'axis',x1:MX0,y1:MY0,x2:MX0,y2:MY1}));
+  (function(){ const t=el('text',{class:'axlab',x:MX0-8,y:MY0+6,'text-anchor':'end'}); t.textContent='move'; motion.appendChild(t);
+    const t2=el('text',{class:'axlab',x:MX0-8,y:MY1,'text-anchor':'end'}); t2.textContent='still'; motion.appendChild(t2);
+    const t3=el('text',{class:'axlab',x:(MX0+MX1)/2,y:MY1+34,'text-anchor':'middle'}); t3.textContent='time across the record'; motion.appendChild(t3); })();
+  // dynamic layers (created once, updated on input)
+  const wakeRect=el('rect',{class:'wake-rect',x:MX0,y:MY0,width:0,height:MY1-MY0});
+  const wakeEdge=el('line',{class:'wake-edge',x1:MX0,y1:MY0,x2:MX0,y2:MY1});
+  const wakeTag=el('text',{class:'wake-tag',x:MX0+6,y:MY0+14}); wakeTag.textContent='';
+  const motionArea=el('path',{class:'motion-area',d:''});
+  const motionLine=el('path',{class:'motion-line',d:''});
+  motion.appendChild(wakeRect); motion.appendChild(motionArea); motion.appendChild(motionLine);
+  motion.appendChild(wakeEdge); motion.appendChild(wakeTag);
 
-  const chart = document.getElementById('chart');
-  const NS='http://www.w3.org/2000/svg';
-  function el(tag,attrs){const e=document.createElementNS(NS,tag);for(const k in attrs)e.setAttribute(k,attrs[k]);return e;}
+  function drawMotion(w){
+    const {activity}=recordAt(w);
+    const n=activity.length;
+    const X=i=> MX0 + (i/(n-1))*(MX1-MX0);
+    const Y=v=> MY1 - Math.min(v,YMAX)/YMAX*(MY1-MY0);
+    let line='', area='M'+X(0)+','+MY1+' ';
+    for(let i=0;i<n;i++){ const px=X(i).toFixed(1), py=Y(activity[i]).toFixed(1);
+      line += (i===0?'M':'L')+px+','+py+' '; area += 'L'+px+','+py+' '; }
+    area += 'L'+X(n-1)+','+MY1+' Z';
+    motionLine.setAttribute('d',line);
+    motionArea.setAttribute('d',area);
+    const edge = w>0 ? X(w) : MX0;
+    wakeRect.setAttribute('width', (edge-MX0).toFixed(1));
+    wakeEdge.setAttribute('x1',edge); wakeEdge.setAttribute('x2',edge);
+    wakeTag.textContent = w>0 ? 'easy-to-classify wake' : '';
+  }
 
-  // gridlines + y labels at 0.5, 0.75, 1.0
+  // ================= AUROC FIGURE (right) =================
+  const chart=document.getElementById('chart');
+  const CH={x0:52,x1:600,y0:22,y1:196,ymin:0.5,ymax:1.0};
+  const xOf=w=> CH.x0 + (w/MAXW)*(CH.x1-CH.x0);
+  const yOf=a=> CH.y1 - ((a-CH.ymin)/(CH.ymax-CH.ymin))*(CH.y1-CH.y0);
   [0.5,0.75,1.0].forEach(a=>{
-    chart.appendChild(el('line',{class:'grid',x1:CH.x0,y1:yOf(a),x2:CH.x1,y2:yOf(a)}));
-    const t=el('text',{class:'axlab',x:CH.x0-10,y:yOf(a)+4,'text-anchor':'end'});t.textContent=a.toFixed(2);chart.appendChild(t);
+    chart.appendChild(el('line',{class:'grid-l',x1:CH.x0,y1:yOf(a),x2:CH.x1,y2:yOf(a)}));
+    const t=el('text',{class:'axlab',x:CH.x0-8,y:yOf(a)+4,'text-anchor':'end'}); t.textContent=a.toFixed(2); chart.appendChild(t);
   });
-  // x labels
-  [0,30,60,90,120].forEach(w=>{
-    const t=el('text',{class:'axlab',x:xOf(w),y:CH.y1+22,'text-anchor':'middle'});t.textContent=w;chart.appendChild(t);
-  });
-  const xt=el('text',{class:'axlab',x:(CH.x0+CH.x1)/2,y:CH.y1+44,'text-anchor':'middle'});
-  xt.textContent='easy-to-classify wake prepended (min)';chart.appendChild(xt);
-
-  // curve path
-  let d='';
-  curve.forEach((a,w)=>{ d += (w===0?'M':'L') + xOf(w).toFixed(1) + ',' + yOf(a).toFixed(1) + ' '; });
-  chart.appendChild(el('path',{class:'curve',d}));
-
-  // moving marker
-  const dotLine = el('line',{class:'dotline',x1:xOf(0),y1:CH.y1,x2:xOf(0),y2:yOf(curve[0])});
-  const dot = el('circle',{class:'dot',cx:xOf(0),cy:yOf(curve[0]),r:5});
+  [0,30,60,90,120].forEach(w=>{ const t=el('text',{class:'axlab',x:xOf(w),y:CH.y1+22,'text-anchor':'middle'}); t.textContent=w; chart.appendChild(t); });
+  (function(){ const t=el('text',{class:'axlab',x:(CH.x0+CH.x1)/2,y:CH.y1+40,'text-anchor':'middle'}); t.textContent='easy-to-classify wake prepended (min)'; chart.appendChild(t); })();
+  let d=''; curve.forEach((a,w)=>{ d += (w===0?'M':'L') + xOf(w).toFixed(1) + ',' + yOf(a).toFixed(1) + ' '; });
+  chart.appendChild(el('path',{class:'auroc-curve',d}));
+  const dotLine=el('line',{class:'auroc-dotline',x1:xOf(0),y1:CH.y1,x2:xOf(0),y2:yOf(base)});
+  const dot=el('circle',{class:'auroc-dot',cx:xOf(0),cy:yOf(base),r:5});
   chart.appendChild(dotLine); chart.appendChild(dot);
 
-  // ---- wire up controls ----
+  // ================= WIRE UP =================
   const slider=document.getElementById('slider');
   const aurocEl=document.getElementById('auroc');
   const deltaEl=document.getElementById('delta');
   const wlab=document.getElementById('wlab');
-  const segwake=document.getElementById('segwake');
-  const strippct=document.getElementById('strippct');
-  const base=curve[0];
+  const cap=document.getElementById('cap');
 
   function update(w){
     const a=curve[w];
     aurocEl.textContent=a.toFixed(3);
     wlab.textContent=w;
+    deltaEl.textContent = w===0 ? 'baseline' : '+'+(a-base).toFixed(3)+' vs. baseline (0 min)';
     const frac=w/(w+NIGHT);
-    segwake.style.width=(frac*100).toFixed(1)+'%';
-    strippct.textContent=Math.round(frac*100)+'% easy wake';
-    deltaEl.textContent = w===0 ? 'baseline' : '+'+(a-base).toFixed(3)+' vs. baseline';
+    cap.textContent = Math.round(frac*100)+'% of the record is trivially-classifiable wake';
     dot.setAttribute('cx',xOf(w)); dot.setAttribute('cy',yOf(a));
     dotLine.setAttribute('x1',xOf(w)); dotLine.setAttribute('x2',xOf(w)); dotLine.setAttribute('y2',yOf(a));
+    drawMotion(w);
   }
   slider.addEventListener('input',e=>update(+e.target.value));
   update(0);
