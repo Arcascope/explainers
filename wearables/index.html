@@ -166,7 +166,7 @@ const DATA = [{"study": "Chinoy 2021", "first_author": "Chinoy ED", "year": 2021
 const METRICS = [
  {key:"tst_bias_min", name:"TST bias", unit:"min", two:true, opts:[5,10,15,20,25], def:15, optLab:v=>"≤ ±"+v+" min", ci:["tst_bias_ci_low","tst_bias_ci_high"], sd:"tst_bias_sd_min", fmt:v=>v.toFixed(1), domain:[-100,60]},
  {key:"tst_bias_ci_halfwidth", name:"TST bias CI precision", unit:"min", upper:true, opts:[5,10,15,20,25], def:15, optLab:v=>"≤ ±"+v+" min", fmt:v=>v.toFixed(1), domain:[0,30]},
- {key:"loa", name:"TST limits of agreement", unit:"min", two:true, opts:[30,40,50,60,70,80], def:60, optLab:v=>"≤ ±"+v+" min", fmt:v=>v.toFixed(1), domain:[-300,220]},
+ {key:"loa", name:"TST limits of agreement", tab:"TST LoA", unit:"min", two:true, opts:[30,40,50,60,70,80], def:60, optLab:v=>"≤ ±"+v+" min", fmt:v=>v.toFixed(1), domain:[-300,220]},
  {key:"accuracy", tol:5, name:"Accuracy", unit:"%", opts:[85,87.5,90,92.5,95], def:85, optLab:v=>"≥ "+v+"% with ≤ 5% CI", ci:["accuracy_ci_low","accuracy_ci_high"], sd:"accuracy_sd", fmt:v=>v.toFixed(1), domain:[70,100]},
  {key:"sensitivity", tol:5, name:"Sensitivity", unit:"%", opts:[90,92.5,95], def:92.5, optLab:v=>"≥ "+v+"% with ≤ 5% CI", ci:["sensitivity_ci_low","sensitivity_ci_high"], sd:"sensitivity_sd", fmt:v=>v.toFixed(1), domain:[80,100]},
  {key:"specificity", tol:7, name:"Specificity", unit:"%", opts:[45,47.5,50,52.5,55], def:47.5, optLab:v=>"≥ "+v+"% with ≤ 7% CI", ci:["specificity_ci_low","specificity_ci_high"], sd:"specificity_sd", fmt:v=>v.toFixed(1), domain:[0,100]},
@@ -187,7 +187,7 @@ let metric=METRICS.find(m=>"#"+m.key===location.hash)||METRICS[0];
 const $=s=>document.querySelector(s);
 const tabs=$("#tabs");
 const reqSel=$("#req"); reqSel.addEventListener("change",()=>{metric.thrVal=+reqSel.value; render();});
-METRICS.forEach((m,i)=>{const b=document.createElement("button");b.className="tab";b.setAttribute("role","tab");b.id="tab-"+m.key;b.textContent=m.name;b.setAttribute("aria-selected",i===0);b.onclick=()=>{metric=m;history.replaceState(null,"","#"+m.key);render();};tabs.appendChild(b);});
+METRICS.forEach((m,i)=>{const b=document.createElement("button");b.className="tab";b.setAttribute("role","tab");b.id="tab-"+m.key;b.textContent=m.tab||m.name;b.setAttribute("aria-selected",i===0);b.onclick=()=>{metric=m;history.replaceState(null,"","#"+m.key);render();};tabs.appendChild(b);});
 function lab(r){const p=[]; if(r.condition&&(r.row_type!=="primary"||/algorithm/.test(r.condition)||/^(older|young)/.test(r.condition)||r.condition.startsWith("9 h"))) p.push(r.condition.replace(", mean of 3 nights","").replace("night 1 (standard)","night 1")); if(r.central_statistic==="median") p.push("median"); if(r.n_participants!=null) p.push("n="+r.n_participants); return r.study.replace("Concheiro-Moscoso","Concheiro")+(p.length?" ("+p.join(", ")+")":"");}
 function zone(){ if(!metric.opts) return null; const v=metric.thrVal; return metric.two?[-v,v]:metric.upper?[0,v]:[v,null]; }
 function ciHalf(r){ if(!metric.ci) return null; const lo=r[metric.ci[0]],hi=r[metric.ci[1]]; return (lo==null||hi==null)?null:(hi-lo)/2; }
