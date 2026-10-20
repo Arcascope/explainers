@@ -27,7 +27,7 @@ const state = {
   dayLux: 125, // typical home light at eye level
   nightLux: 15,
   exercise: { enabled: true, start: 7.5, minutes: 60 },
-  days: 60,
+  days: 30,
   melatonin: { enabled: false, start: null }, // start: dose time the simulation uses
   settledDlmo: null, // where melatonin onset settles on this day (latest run), or null
   zones: null, // exercise zones in clock time once settled: [{ from, to }] (lights-on hours only)

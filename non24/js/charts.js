@@ -35,7 +35,7 @@ export function drawActogram(canvas, result) {
   const narrow = cssW < 520;
   const left = narrow ? 24 : 30, top = 20, right = 10; // right: room for the last hour label
   const gap = 2;
-  const barH = narrow ? 5 : days > 60 ? 6 : 8;
+  const barH = days > 60 ? 4 : days > 30 ? 5 : narrow ? 6 : 7;
   const rowH = barH + gap;
   const cssH = top + rowH * days + 4;
   canvas.style.height = `${cssH}px`;
