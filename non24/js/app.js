@@ -482,18 +482,20 @@ function renderPrc(r) {
   // settled (when the clock settles with that workout or dose in place).
   // Zones that fall while the lights are off are left out (no workouts or
   // doses then); unlabelled while the clock doesn't settle.
-  // Zones not in use (switched off or left out) are shown without times.
+  // Zones switched off are shown without times; zones left out because they
+  // wouldn't help aren't shown at all.
   const bare = (defs) => defs.map((z) => ({ from: z.from, to: z.to, label: '' }));
   const label = (defs, len) => (state.settledDlmo === null ? bare(defs) : defs.flatMap((z) => {
     const c = clipZone(state.settledDlmo, z, len);
     return c ? [{ from: z.from, to: z.to, label: `${fmtClock(c.from)}–${fmtClock(c.to)}` }] : [];
   }));
+  const zonesFor = (on, helps, defs, len) => (!on ? bare(defs) : helps === false ? [] : label(defs, len));
   const exCurve = prcCurve(), melCurve = melatoninCurve();
   const yMax = prcScale(showMel ? [exCurve, melCurve] : [exCurve], [marker, melMarker]);
-  drawPrc($('prc-svg'), exCurve, PRC_POINTS, marker, state.exercise.enabled && state.exHelps !== false ? label(zoneDefs()) : bare(zoneDefs()), { yMax });
+  drawPrc($('prc-svg'), exCurve, PRC_POINTS, marker, zonesFor(state.exercise.enabled, state.exHelps, zoneDefs()), { yMax });
   $('mel-prc').hidden = !showMel;
   if (showMel) {
-    drawPrc($('mel-prc-svg'), melCurve, [], melMarker, state.melatonin.enabled && state.melHelps !== false ? label(melatoninZones(), 0) : bare(melatoninZones()),
+    drawPrc($('mel-prc-svg'), melCurve, [], melMarker, zonesFor(state.melatonin.enabled, state.melHelps, melatoninZones(), 0),
       { yMax, yAxis: 'prc.mel.yAxis', zoneKey: 'prc.mel.zone', markerKey: 'prc.dose', lineClass: 'prc-line mel' });
   }
 }
