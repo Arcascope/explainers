@@ -1,0 +1,222 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#2B1229">
+<!-- All visible text comes from copy.md (see js/copy.js). The title and
+     description here are fallbacks for link previews; copy.md overrides them. -->
+<title>Non-24 Day Planner</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<meta name="description" content="Pick your circadian period, design a day of light, darkness and exercise, and see whether a mathematical model predicts you would entrain to it, and how much sleep it would cost.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Merriweather:ital,wght@0,300;0,400;1,300&family=Work+Sans:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<header class="masthead">
+  <div class="wrap">
+    <h1 data-copy="hero.title"></h1>
+    <p class="lede" data-copy="hero.lede"></p>
+    <p class="hero-note" data-copy="hero.note"></p>
+  </div>
+</header>
+
+<main class="wrap layout">
+  <nav class="pane-tabs" data-copy-aria="tabs.aria">
+    <button type="button" class="pane-tab" data-pane="controls" aria-current="true" data-copy="tabs.day"></button>
+    <button type="button" class="pane-tab" data-pane="results"><span data-copy="tabs.results"></span> <span class="tab-status" id="tab-status"></span></button>
+  </nav>
+  <div class="panes" id="panes">
+  <section class="panel controls" id="pane-controls" aria-labelledby="controls-h">
+    <h2 id="controls-h" class="sr-only" data-copy="settings.heading"></h2>
+
+    <fieldset class="group">
+      <legend data-copy="clock.legend"></legend>
+      <label class="field" for="tau">
+        <span class="field-label" data-copy="clock.tau.label"></span>
+        <span class="field-value"><output id="tau-out" for="tau"></output></span>
+      </label>
+      <input id="tau" type="range" min="23.5" max="26" step="0.05" value="24.8">
+      <p class="hint" id="tau-hint"></p>
+    </fieldset>
+
+    <fieldset class="group">
+      <legend data-copy="day.legend"></legend>
+      <div class="day-editor">
+        <svg id="day-svg" viewBox="0 0 480 124" role="group" data-copy-aria="day.editor.aria"></svg>
+      </div>
+      <div class="row2">
+        <label class="field stack" for="lights-on"><span class="field-label" data-copy="day.lightsOn"></span><input id="lights-on" type="time" value="07:00" step="900"></label>
+        <label class="field stack" for="lights-off"><span class="field-label" data-copy="day.lightsOff"></span><input id="lights-off" type="time" value="23:00" step="900"></label>
+      </div>
+      <p class="hint" data-copy="day.hint"></p>
+
+      <div class="field stack">
+        <span class="field-label" id="day-lux-label" data-copy="day.lux.label"></span>
+        <div class="chips" role="radiogroup" aria-labelledby="day-lux-label">
+          <label class="chip"><input type="radio" name="day-lux" value="125" checked><span><b data-copy="day.lux.125"></b><small data-copy="units.lux" data-n="125"></small></span></label>
+          <label class="chip"><input type="radio" name="day-lux" value="250"><span><b data-copy="day.lux.250"></b><small data-copy="units.lux" data-n="250"></small></span></label>
+          <label class="chip"><input type="radio" name="day-lux" value="500"><span><b data-copy="day.lux.500"></b><small data-copy="units.lux" data-n="500"></small></span></label>
+          <label class="chip"><input type="radio" name="day-lux" value="10000"><span><b data-copy="day.lux.10000"></b><small data-copy="units.lux" data-n="10,000"></small></span></label>
+        </div>
+      </div>
+
+      <div class="field stack">
+        <span class="field-label" id="night-lux-label" data-copy="day.dim.label"></span>
+        <div class="chips chips-3" role="radiogroup" aria-labelledby="night-lux-label">
+          <label class="chip"><input type="radio" name="night-lux" value="5"><span><b data-copy="day.dim.5"></b><small data-copy="units.lux" data-n="5"></small></span></label>
+          <label class="chip"><input type="radio" name="night-lux" value="15" checked><span><b data-copy="day.dim.15"></b><small data-copy="units.lux" data-n="15"></small></span></label>
+          <label class="chip"><input type="radio" name="night-lux" value="40"><span><b data-copy="day.dim.40"></b><small data-copy="units.lux" data-n="40"></small></span></label>
+        </div>
+      </div>
+      <p class="hint" data-copy="day.dim.hint"></p>
+    </fieldset>
+
+    <fieldset class="group">
+      <legend data-copy="activity.legend"></legend>
+      <label class="toggle" for="ex-on"><input id="ex-on" type="checkbox" checked><span data-copy="exercise.toggle"></span></label>
+      <div id="ex-fields" class="group-inner">
+      <div class="row2">
+        <label class="field stack" for="ex-min"><span class="field-label" data-copy="exercise.length"></span>
+          <select id="ex-min">
+            <option value="30" data-copy="units.minutes" data-n="30"></option>
+            <option value="45" data-copy="units.minutes" data-n="45"></option>
+            <option value="60" data-copy="units.minutes" data-n="60" selected></option>
+            <option value="90" data-copy="units.minutes" data-n="90"></option>
+          </select>
+        </label>
+      </div>
+      <p class="windows" id="ex-windows"></p>
+      </div>
+
+      <div id="mel-row" class="group-inner" hidden>
+        <label class="toggle" for="mel-on"><input id="mel-on" type="checkbox"><span data-copy="melatonin.toggle"></span></label>
+        <div id="mel-fields" class="group-inner" hidden>
+          <p class="windows" id="mel-windows"></p>
+          <p class="hint" data-copy="melatonin.safety"></p>
+        </div>
+      </div>
+
+    </fieldset>
+  </section>
+
+  <section class="results" id="pane-results" aria-labelledby="result-h">
+    <div class="panel verdict" id="verdict" aria-live="polite">
+      <h2 id="result-h" class="sr-only" data-copy="verdict.heading"></h2>
+      <div class="panel-head"><span class="status" id="pill" data-copy="verdict.calculating"></span><span class="progress" id="sweep-progress"></span></div>
+      <p class="verdict-main" id="verdict-main" data-copy="verdict.running"></p>
+      <dl class="stats" id="stats"></dl>
+    </div>
+
+    <div class="panel">
+      <div class="panel-head">
+        <h3 data-copy="acto.heading"></h3>
+        <ul class="legend">
+          <li><i class="sw sw-lamp" id="legend-light"></i><span id="legend-light-label"></span></li>
+          <li><i class="sw sw-dim"></i><span data-copy="legend.dim"></span></li>
+          <li><i class="sw sw-night"></i><span data-copy="legend.asleep"></span></li>
+          <li id="legend-ex"><i class="sw sw-move"></i><span data-copy="legend.exercise"></span></li>
+          <li id="legend-mel" hidden><i class="sw sw-mel"></i><span data-copy="legend.melatonin"></span></li>
+          <li><i class="sw sw-dot"></i><span data-copy="legend.dlmo"></span></li>
+        </ul>
+      </div>
+      <p class="hint" id="acto-hint" data-copy="acto.hint.initial"></p>
+      <div class="days-select">
+        <label for="days" data-copy="acto.days"></label>
+        <select id="days"><option>30</option><option selected>60</option><option>90</option></select>
+      </div>
+      <div class="acto-wrap"><canvas id="actogram" data-copy-aria="acto.aria"></canvas></div>
+    </div>
+    <div class="panel cost" id="cost" aria-live="polite">
+      <div class="panel-head">
+        <h3 data-copy="cost.heading"></h3>
+        <span class="status" id="cost-pill"></span>
+      </div>
+      <p class="hint" id="cost-intro" data-copy="cost.intro"></p>
+      <div class="cost-grid">
+        <div class="cost-col">
+          <h4 id="cost-early-h" data-copy="cost.early.initial"></h4>
+          <dl class="cost-list" id="cost-early"></dl>
+        </div>
+        <div class="cost-col">
+          <h4 id="cost-late-h" data-copy="cost.late"></h4>
+          <dl class="cost-list" id="cost-late"></dl>
+        </div>
+      </div>
+      <p class="cost-note" id="cost-note"></p>
+      <div class="tune" id="tune">
+        <div class="tune-title" data-copy="tune.title"></div>
+        <div class="tune-row">
+          <button type="button" class="tune-btn" id="tune-night"><span class="tune-q" id="tune-night-q"></span><span class="tune-a" data-copy="tune.night.action"></span></button>
+          <button type="button" class="tune-btn" id="tune-dim"><span class="tune-q" id="tune-dim-q"></span><span class="tune-a" data-copy="tune.dim.action"></span></button>
+          <button type="button" class="tune-btn" id="tune-bright"><span class="tune-q" id="tune-bright-q"></span><span class="tune-a" data-copy="tune.bright.action"></span></button>
+        </div>
+      </div>
+    </div>
+
+  </section>
+  </div>
+
+  <section class="panel wide" aria-labelledby="prc-h">
+    <h3 id="prc-h" data-copy="prc.heading"></h3>
+    <p class="hint" data-copy="prc.hint"></p>
+    <div class="chart-scroll"><svg id="prc-svg" class="chart" role="img" data-copy-aria="prc.aria"></svg></div>
+    <div id="mel-prc" hidden>
+      <h3 data-copy="prc.mel.heading"></h3>
+      <div class="chart-scroll"><svg id="mel-prc-svg" class="chart" role="img" data-copy-aria="prc.mel.aria"></svg></div>
+    </div>
+  </section>
+
+  <section class="panel wide method" aria-labelledby="method-h">
+    <h3 id="method-h" data-copy="method.heading"></h3>
+    <div class="cols">
+      <div>
+        <h4 data-copy="method.model.title"></h4>
+        <p data-copy="method.model.p1"></p>
+        <p data-copy="method.model.p2"></p>
+      </div>
+      <div>
+        <h4 data-copy="method.day.title"></h4>
+        <p data-copy="method.day.p1"></p>
+        <p data-copy="method.day.p2"></p>
+      </div>
+      <div>
+        <h4 data-copy="method.exercise.title"></h4>
+        <p data-copy="method.exercise.p1"></p>
+        <p data-copy="method.exercise.p2"></p>
+      </div>
+      <div>
+        <h4 data-copy="method.melatonin.title"></h4>
+        <p data-copy="method.melatonin.p1"></p>
+      </div>
+      <div>
+        <h4 data-copy="method.tau.title"></h4>
+        <p data-copy="method.tau.p1"></p>
+      </div>
+      <div>
+        <h4 data-copy="method.entrain.title"></h4>
+        <p data-copy="method.entrain.p1"></p>
+        <p data-copy="method.entrain.p2"></p>
+      </div>
+    </div>
+    <h4 data-copy="sources.heading"></h4>
+    <ul class="refs">
+      <li data-copy="sources.skeldon"></li>
+      <li data-copy="sources.youngstedt"></li>
+      <li data-copy="sources.burgess"></li>
+      <li data-copy="sources.emens"></li>
+      <li data-copy="sources.circadian"></li>
+    </ul>
+  </section>
+</main>
+
+<footer class="wrap foot">
+  <p data-copy="footer.license"></p>
+  <p data-copy="footer.disclaimer"></p>
+</footer>
+
+<script type="module" src="js/app.js"></script>
+</body>
+</html>
