@@ -20,9 +20,28 @@ export function lightTier(lux) {
   return 'ember';
 }
 
-export const fmtClock = (h) => {
+// Displayed times are 24-hour ("13:05") or am/pm ("1:05 PM"); see setClock12.
+let clock12 = false;
+export const setClock12 = (on) => { clock12 = on; };
+// "13:05" whatever the display style, for <input type="time"> values.
+export const fmtTimeValue = (h) => {
   const m = Math.round(mod(h, 24) * 60) % 1440;
   return `${String(Math.floor(m / 60)).padStart(2, '0')}:${String(m % 60).padStart(2, '0')}`;
+};
+export const fmtClock = (h) => {
+  if (!clock12) return fmtTimeValue(h);
+  const m = Math.round(mod(h, 24) * 60) % 1440, hh = Math.floor(m / 60);
+  return `${hh % 12 || 12}:${String(m % 60).padStart(2, '0')} ${hh < 12 ? 'AM' : 'PM'}`;
+};
+// "00:20–07:00", or "12:20–7:00 AM" (one AM/PM when both ends share it).
+export const fmtClockRange = (a, b) => {
+  const from = fmtClock(a), to = fmtClock(b);
+  return clock12 && from.slice(-2) === to.slice(-2) ? `${from.slice(0, -3)}–${to}` : `${from}–${to}`;
+};
+// Hour-axis tick: "06", or "6a" in am/pm style.
+export const fmtHourTick = (h) => {
+  const hh = mod(h, 24);
+  return clock12 ? `${hh % 12 || 12}${hh < 12 ? 'a' : 'p'}` : String(hh).padStart(2, '0');
 };
 
 // Double-plotted actogram: each row shows day d and d+1 (48 h). Rows are rounded
@@ -56,7 +75,7 @@ export function drawActogram(canvas, result) {
   g.fillStyle = c.muted;
   g.textAlign = 'center';
   g.textBaseline = 'alphabetic';
-  for (let h = 0; h <= 48; h += 6) g.fillText(String(h % 24).padStart(2, '0'), X(h), 12);
+  for (let h = 0; h <= 48; h += 6) g.fillText(fmtHourTick(h), X(h), 12);
 
   // light windows as runs (wrap-aware), reused for every row
   const step = 0.25;

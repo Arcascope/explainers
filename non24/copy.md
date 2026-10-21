@@ -26,6 +26,15 @@ Explore different days, and see if entrainment is possible or not with an open-s
 ## hero.note
 Educational only: not medical advice.
 
+## clock.format.aria
+Time format
+
+## clock.format.12
+AM/PM
+
+## clock.format.24
+24 h
+
 ## tabs.aria
 Your day and results
 
@@ -243,6 +252,12 @@ DLMO
 
 ## stats.sleep
 Sleep once settled
+
+## stats.sleepDuration
+Sleep duration
+
+## stats.hoursMinutes
+{h} h {m} min
 
 ---
 

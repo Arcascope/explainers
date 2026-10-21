@@ -1,6 +1,6 @@
 import { simulate, sweepStarts, mod, circMean, circDiff } from './simulate.js';
 import { prcCurve, PRC_POINTS, exerciseZones, exerciseShift, melatoninCurve, melatoninZones, melatoninShift } from './prc.js';
-import { drawActogram, drawPrc, prcScale, fmtClock, lightTier } from './charts.js';
+import { drawActogram, drawPrc, prcScale, fmtClock, fmtClockRange, fmtTimeValue, fmtHourTick, setClock12, lightTier } from './charts.js';
 import { loadCopy, applyCopy, t, html } from './copy.js';
 
 const $ = (id) => document.getElementById(id);
@@ -164,7 +164,7 @@ function drawDayEditor() {
   for (let h = 0; h <= 24; h += 6) {
     node('line', { x1: dx(h), x2: dx(h), y1: DE.trackY + DE.trackH + 2, y2: DE.trackY + DE.trackH + 6, class: 'de-tick' }, svg);
     const tick = node('text', { x: dx(h), y: DE.labelY, 'text-anchor': 'middle', class: 'de-label' }, svg);
-    tick.textContent = String(h % 24).padStart(2, '0');
+    tick.textContent = fmtHourTick(h);
   }
   const cap = node('text', { x: dx(0), y: 19, class: 'de-cap' }, svg);
   cap.textContent = t('day.editor.caption', { on: fmtClock(state.lightsOn), off: fmtClock(state.lightsOff) });
@@ -226,8 +226,8 @@ function syncInputs() {
   $('tau-hint').textContent = Math.abs(drift) < 1
     ? t('clock.tau.hint.even')
     : t(drift > 0 ? 'clock.tau.hint.late' : 'clock.tau.hint.early', { min: Math.round(Math.abs(drift)) });
-  $('lights-on').value = fmtClock(state.lightsOn);
-  $('lights-off').value = fmtClock(state.lightsOff);
+  $('lights-on').value = fmtTimeValue(state.lightsOn);
+  $('lights-off').value = fmtTimeValue(state.lightsOff);
   const tier = lightTier(state.dayLux);
   $('legend-light').className = `sw sw-${tier}`;
   $('legend-light-label').textContent = t(`legend.light.${tier}`);
@@ -340,7 +340,7 @@ function renderWindows(target, zones, oneKey, manyKey, noneKey) {
   target.replaceChildren(label, ...zones.map((z) => {
     const pill = document.createElement('span');
     pill.className = 'time-pill';
-    pill.textContent = `${fmtClock(z.from)}–${fmtClock(z.to)}`;
+    pill.textContent = fmtClockRange(z.from, z.to);
     return pill;
   }));
 }
@@ -390,7 +390,9 @@ function renderVerdict(starts, example, cost) {
     stats.push([t('stats.daysToEntrain'), t('range.upTo', { n: slowest })], [t('stats.typical'), t('range.days', { n: median(d) })], [t('stats.dlmo'), fmtClock(dlmo)]);
   }
   if (example.sleepSummary && example.entrainment.entrained) {
-    stats.push([t('stats.sleep'), `${fmtClock(example.sleepSummary.onsetClock)}–${fmtClock(example.sleepSummary.wakeClock)}`]);
+    const m = Math.round(example.sleepSummary.hoursPerDay * 12) * 5; // nearest 5 min
+    stats.push([t('stats.sleep'), fmtClockRange(example.sleepSummary.onsetClock, example.sleepSummary.wakeClock)],
+      [t('stats.sleepDuration'), t('stats.hoursMinutes', { h: Math.floor(m / 60), m: String(m % 60).padStart(2, '0') })]);
   }
   fillList($('stats'), stats);
 }
@@ -487,7 +489,7 @@ function renderPrc(r) {
   const bare = (defs) => defs.map((z) => ({ from: z.from, to: z.to, label: '' }));
   const label = (defs, len) => (state.settledDlmo === null ? bare(defs) : defs.flatMap((z) => {
     const c = clipZone(state.settledDlmo, z, len);
-    return c ? [{ from: z.from, to: z.to, label: `${fmtClock(c.from)}–${fmtClock(c.to)}` }] : [];
+    return c ? [{ from: z.from, to: z.to, label: fmtClockRange(c.from, c.to) }] : [];
   }));
   const zonesFor = (on, helps, defs, len) => (!on ? bare(defs) : helps === false ? [] : label(defs, len));
   const exCurve = prcCurve(), melCurve = melatoninCurve();
@@ -675,6 +677,7 @@ async function run() {
   const exStart = exampleStart(starts);
   lastResult = simulate(s, { startDlmoClock: exStart, days: DAYS });
   const cost = costOf(starts);
+  lastStarts = starts; lastCost = cost;
   renderVerdict(starts, lastResult, cost);
   const okStarts = starts.filter((r) => r.entrained);
   state.settledDlmo = okStarts.length ? circMean(okStarts.map((r) => r.dlmoClock)) : null;
@@ -695,6 +698,38 @@ async function run() {
   await checkTunes(id, s, starts);
 }
 
+// ---------- time format ----------
+
+// AM/PM or 24-hour times: the viewer's choice if they made one, else their
+// locale's. Switching redraws everything that shows a time from the last run.
+const CLOCK_KEY = 'non24.clock12';
+let lastStarts = null, lastCost = null;
+
+function initClockFormat() {
+  let saved = null;
+  try { saved = localStorage.getItem(CLOCK_KEY); } catch {}
+  const hc = new Intl.DateTimeFormat(undefined, { hour: 'numeric' }).resolvedOptions().hourCycle;
+  setClockFormat(saved === null ? hc === 'h12' || hc === 'h11' : saved === '1');
+  for (const b of document.querySelectorAll('[data-clock]')) {
+    b.addEventListener('click', () => {
+      setClockFormat(b.dataset.clock === '12');
+      try { localStorage.setItem(CLOCK_KEY, b.dataset.clock === '12' ? '1' : '0'); } catch {}
+      syncInputs();
+      drawDayEditor();
+      if (!lastResult) return;
+      renderVerdict(lastStarts, lastResult, lastCost);
+      renderCost(lastCost);
+      renderMain();
+      renderPrc(lastResult);
+    });
+  }
+}
+
+function setClockFormat(on) {
+  setClock12(on);
+  for (const b of document.querySelectorAll('[data-clock]')) b.setAttribute('aria-pressed', String((b.dataset.clock === '12') === on));
+}
+
 // Redraw canvas on resize and theme change (canvas colours are read from CSS tokens).
 let resizeTimer = null;
 window.addEventListener('resize', () => { clearTimeout(resizeTimer); resizeTimer = setTimeout(renderMain, 100); });
@@ -703,6 +738,7 @@ new MutationObserver(renderMain).observe(document.documentElement, { attributes:
 
 await loadCopy();
 applyCopy();
+initClockFormat();
 syncInputs();
 drawDayEditor();
 bindInputs();
