@@ -16,12 +16,15 @@ const DAY_LUX_LEVELS = [125, 250, 500, 10000]; // matches the light chips
 const NIGHT_LUX_LEVELS = [5, 15, 40]; // matches the dim-light chips
 const DAYS = 120;
 
+// 0.25 -> "0.25", 1.41 -> "1.4"; keeps the slider readout short.
+const fmtSens = (x) => (x >= 10 ? x.toFixed(0) : x >= 1 ? String(Number(x.toFixed(1))) : String(Number(x.toFixed(2))));
 const parseTime = (v) => { const [h, m] = v.split(':').map(Number); return h + m / 60; };
 const mean = (a) => (a.length ? a.reduce((x, y) => x + y, 0) / a.length : 0);
 const median = (a) => { const b = [...a].sort((x, y) => x - y); return b[Math.floor(b.length / 2)]; };
 
 const state = {
   tau: 24.8,
+  lightSensitivity: 1, // multiplies all light the clock sees
   lightsOn: 7,
   lightsOff: 23,
   dayLux: 125, // typical home light at eye level
@@ -43,6 +46,7 @@ const melOffered = () => state.tau > MEL_MIN_TAU;
 
 const schedule = () => ({
   tau: state.tau,
+  lightSensitivity: state.lightSensitivity,
   lightsOn: state.lightsOn,
   lightsOff: state.lightsOff,
   dayLux: state.dayLux,
@@ -226,6 +230,12 @@ function syncInputs() {
   $('tau-hint').textContent = Math.abs(drift) < 1
     ? t('clock.tau.hint.even')
     : t(drift > 0 ? 'clock.tau.hint.late' : 'clock.tau.hint.early', { min: Math.round(Math.abs(drift)) });
+  const sens = state.lightSensitivity;
+  $('sens').value = Math.log2(sens);
+  $('sens-out').value = t('clock.sens.value', { x: fmtSens(sens) });
+  $('sens-hint').textContent = Math.abs(sens - 1) < 1e-9
+    ? t('clock.sens.hint.typical')
+    : t(sens > 1 ? 'clock.sens.hint.more' : 'clock.sens.hint.less', { x: fmtSens(sens > 1 ? sens : 1 / sens) });
   $('lights-on').value = fmtTimeValue(state.lightsOn);
   $('lights-off').value = fmtTimeValue(state.lightsOff);
   const tier = lightTier(state.dayLux);
@@ -246,6 +256,8 @@ function bindInputs() {
     // Melatonin is only offered for a long period; switch it off when hidden.
     if (!melOffered() && state.melatonin.enabled) { state.melatonin.enabled = false; $('mel-on').checked = false; }
   });
+  // The slider is log2 of the multiplier, so 1× sits in the middle.
+  on('sens', 'input', (t) => { state.lightSensitivity = 2 ** Number(t.value); });
   on('lights-on', 'change', (t) => { if (t.value) state.lightsOn = parseTime(t.value); });
   on('lights-off', 'change', (t) => { if (t.value) state.lightsOff = parseTime(t.value); });
   on('ex-on', 'change', (t) => { state.exercise.enabled = t.checked; });

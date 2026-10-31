@@ -114,7 +114,7 @@ function sleepEpisodes(sleep, dt) {
   return eps;
 }
 
-// schedule: { tau, lightsOn, lightsOff, dayLux, nightLux, wakeMode,
+// schedule: { tau, lightSensitivity, lightsOn, lightsOff, dayLux, nightLux, wakeMode,
 //             exercise: { enabled, start, minutes }, melatonin: { enabled, start } }
 export function simulate(schedule, { startDlmoClock = 21, days = 90, detail = true } = {}) {
   const model = new Skeldon23({ tauc: schedule.tau, ...SLEEP_PARAMS }, initialStateFor(schedule.tau, startDlmoClock), 0);
@@ -130,6 +130,9 @@ export function simulate(schedule, { startDlmoClock = 21, days = 90, detail = tr
     fightingSleep: new Float32Array(days), awakeInDim: new Float32Array(days),
     asleep: new Float32Array(days),
   };
+  // Light sensitivity multiplies the lux the clock sees (2 = every light acts
+  // twice as bright on this person's clock). It doesn't change the schedule itself.
+  const sens = schedule.lightSensitivity ?? 1;
   const ex = schedule.exercise;
   const exMid = ex && ex.enabled ? mod(ex.start + ex.minutes / 120, 24) : null;
   // A daily melatonin dose (schedule.melatonin = { enabled, start }) shifts the
@@ -160,7 +163,7 @@ export function simulate(schedule, { startDlmoClock = 21, days = 90, detail = tr
     const step = i % STEPS_PER_DAY;
     const exercising = inExercise(schedule, clock);
     const forceWake = exercising || wakeForced(schedule, clock);
-    model.step(luxAt(schedule, clock), DT, forceWake);
+    model.step(sens * luxAt(schedule, clock), DT, forceWake);
 
     // One exercise bout's phase shift when the clock passes the bout midpoint.
     if (step === exStep) {

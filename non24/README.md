@@ -61,6 +61,10 @@ sleep cost: hours asleep, hours held awake while the model wanted to sleep, and
 hours awake in dim light, during adjustment and once settled. Workouts
 are kept inside the lights-on hours.
 
+**Light sensitivity.** The slider (0.25×–4×, log scale) multiplies every lux value
+before it reaches the oscillator (`lightSensitivity` in the schedule), so 2× at
+125 lux is the default person at 250 lux. Sleep and forced wake are unchanged.
+
 **Exercise.** At the midpoint of each bout, the oscillator is rotated in the
 (x, −xc) plane by the PRC value for the current body-clock time, measured in hours
 after DLMO (CBTmin − 7 h). Youngstedt et al. gave exercise on three consecutive days,
@@ -82,7 +86,7 @@ which DLMO never leaves that window.
 
 ## Not medical advice
 
-This is a research and education tool. Individual light sensitivity, napping,
+This is a research and education tool. Napping,
 masking and day-to-day variation are not modelled.
 
 ## License

@@ -67,6 +67,21 @@ Left alone in the dark, your clock would run {min} min later each day.
 ## clock.tau.hint.early
 Left alone in the dark, your clock would run {min} min earlier each day.
 
+## clock.sens.label
+Light sensitivity
+
+## clock.sens.value
+{x}×
+
+## clock.sens.hint.typical
+The model's average person. Slide right if light affects you more, left if less.
+
+## clock.sens.hint.more
+Every light acts {x}× as bright on your clock as it would for the average person.
+
+## clock.sens.hint.less
+Every light acts on your clock like one {x}× dimmer would for the average person.
+
 ---
 
 ## day.legend
@@ -460,7 +475,7 @@ Entrainment and cost
 A run counts as entrained when, over its last 30 days, melatonin onset stays within 30 minutes of the same clock time and drifts less than half a minute a day. "While you adjust" covers each run's days until it entrains (at least 7). "Sleepy-but-awake hours" counts lit hours when the model would have fallen asleep or stayed asleep if it could.
 
 ## method.entrain.p2
-Every person differs. Light sensitivity, caffeine and day-to-day variation are not modelled.
+Every person differs. Caffeine and day-to-day variation are not modelled. Light sensitivity multiplies every light level before the model's clock sees it, so 2× treats 125 lux as 250; it doesn't change how alert light makes you.
 
 ## method.melatonin.title
 Melatonin
