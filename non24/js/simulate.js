@@ -250,6 +250,38 @@ function summarizeSleep(episodes, days) {
   };
 }
 
+// How many hours after DLMO a free-running person wakes on their own: sleeping
+// whenever sleepy, in the day's light while awake (eyes closed while asleep).
+// Used to start the schedule the way Larroque's VLiDACMel protocol suggests:
+// free-run until you naturally wake near your goal wake time, then start.
+const wakeCache = new Map();
+export function naturalWakeAfterDlmo({ tau, lightSensitivity = 1, dayLux }) {
+  const key = `${tau}|${lightSensitivity}|${dayLux}`;
+  if (wakeCache.has(key)) return wakeCache.get(key);
+  const freeRun = {
+    tau, lightSensitivity, lightsOn: 0, lightsOff: 24, dayLux, nightLux: dayLux,
+    wakeMode: 'natural', exercise: { enabled: false }, melatonin: { enabled: false },
+  };
+  const days = 40;
+  const r = simulate(freeRun, { startDlmoClock: 21, days, detail: true });
+  const lags = [];
+  for (const e of r.sleepEpisodes) {
+    if (e.start < (days - 20) * 24 || e.end >= days * 24 || e.end - e.start < 3) continue;
+    const prior = r.dlmos.filter((d) => d < e.end).pop();
+    if (prior !== undefined) lags.push(e.end - prior);
+  }
+  const lag = lags.length ? lags.reduce((a, b) => a + b, 0) / lags.length : 10;
+  wakeCache.set(key, lag);
+  return lag;
+}
+
+// The starting DLMO clock time at which the person's natural wake-up falls at
+// lights-on (their goal wake time), offset by `offsetHours` (positive = their
+// natural wake is that many hours later than the goal on day one).
+export function goalStartDlmo(schedule, offsetHours = 0) {
+  return mod(schedule.lightsOn - naturalWakeAfterDlmo(schedule) + offsetHours, 24);
+}
+
 // Days to entrain from each starting DLMO clock time (one simulation per start).
 // Yields to the event loop between runs so the page stays responsive.
 export async function sweepStarts(schedule, { starts = 24, days = 120, onProgress } = {}) {

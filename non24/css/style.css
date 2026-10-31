@@ -259,6 +259,17 @@ input[type="time"]:disabled { opacity: 0.6; }
 .days-select { display: flex; align-items: center; gap: 10px; font-size: 0.88rem; color: var(--ink-300); }
 .acto-wrap { background: rgba(20, 7, 19, 0.4); border-radius: 12px; padding: 10px 10px 6px; box-shadow: inset 0 0 0 1px rgba(92, 45, 87, 0.7); }
 #actogram { width: 100%; display: block; }
+.acto-nav { display: flex; align-items: center; gap: 6px; }
+.acto-nav .acto-wrap { flex: 1; min-width: 0; }
+.acto-arrow { flex: none; width: 28px; height: 56px; border: 0; border-radius: 8px; background: rgba(92, 45, 87, 0.45); color: var(--ink-300); font-size: 1.5rem; line-height: 1; cursor: pointer; }
+.acto-arrow:hover { background: rgba(92, 45, 87, 0.8); color: inherit; }
+.acto-arrow:focus-visible { outline: 2px solid currentColor; outline-offset: 2px; }
+.acto-arrow:disabled { opacity: 0.35; cursor: default; }
+.acto-start { margin-top: 8px; }
+@media (max-width: 520px) {
+  .acto-nav { gap: 3px; }
+  .acto-arrow { width: 20px; font-size: 1.2rem; }
+}
 
 /* charts */
 .chart-scroll { overflow-x: auto; }

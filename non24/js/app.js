@@ -1,4 +1,4 @@
-import { simulate, sweepStarts, mod, circMean, circDiff } from './simulate.js';
+import { simulate, sweepStarts, goalStartDlmo, naturalWakeAfterDlmo, mod, circMean, circDiff } from './simulate.js';
 import { prcCurve, PRC_POINTS, exerciseZones, exerciseShift, melatoninCurve, melatoninZones, melatoninShift } from './prc.js';
 import { drawActogram, drawPrc, prcScale, fmtClock, fmtClockRange, fmtTimeValue, fmtHourTick, setClock12, lightTier } from './charts.js';
 import { loadCopy, applyCopy, t, html } from './copy.js';
@@ -39,6 +39,7 @@ const state = {
   melSettles: null, // whether the clock settled with or without it (for that note)
   exHelps: null, // same two for exercise
   exSettles: null,
+  startOffset: 0, // actogram start: hours the natural wake on day one falls after the goal (lights-on)
   tuneHelps: {}, // per suggestion: true once the model says it helps this day
 };
 
@@ -370,7 +371,9 @@ function renderMelatonin() {
 // fighting sleep or sitting in the dark for most of it.
 const unliveable = (c) => c.asleep < 4.5 || c.fighting > 10 || c.dim > 8;
 
-function renderVerdict(starts, example, cost) {
+// goal: the run started the day natural wake-up lands on lights-on (the default
+// assumption, after Larroque's VLiDACMel protocol); its days lead the verdict.
+function renderVerdict(starts, example, cost, goal = example) {
   const ok = starts.filter((r) => r.entrained);
   const pill = $('pill');
   const stats = [];
@@ -386,7 +389,8 @@ function renderVerdict(starts, example, cost) {
   } else {
     const d = ok.map((r) => r.daysToEntrain);
     const slowest = Math.max(...d);
-    const days = t('range.days', { n: slowest });
+    const goalDays = goal.entrainment.entrained ? goal.entrainment.daysToEntrain : null;
+    const days = t('range.days', { n: goalDays ?? slowest });
     const dlmo = circMean(ok.map((r) => r.dlmoClock));
     if (unliveable(cost.late)) {
       set('no', 'verdict.status.unliveable', 'verdict.unliveable', {});
@@ -399,7 +403,8 @@ function renderVerdict(starts, example, cost) {
     } else {
       set('ok', 'verdict.status.ok', 'verdict.ok', { days, dlmo: fmtClock(dlmo) });
     }
-    stats.push([t('stats.daysToEntrain'), t('range.upTo', { n: slowest })], [t('stats.typical'), t('range.days', { n: median(d) })], [t('stats.dlmo'), fmtClock(dlmo)]);
+    if (goalDays !== null) stats.push([t('stats.fromGoal'), t('range.days', { n: goalDays })]);
+    stats.push([t('stats.anyStart'), t('range.upTo', { n: slowest })], [t('stats.dlmo'), fmtClock(dlmo)]);
   }
   if (example.sleepSummary && example.entrainment.entrained) {
     const m = Math.round(example.sleepSummary.hoursPerDay * 12) * 5; // nearest 5 min
@@ -519,17 +524,40 @@ function renderMain() {
   // Legend entries only for what the shown run actually includes.
   $('legend-ex').hidden = !lastResult.schedule.exercise?.enabled;
   $('legend-mel').hidden = !lastResult.schedule.melatonin?.enabled;
-  const view = { ...lastResult, days: Math.min(state.days, lastResult.days) };
+  const shown = shownResult ?? lastResult;
+  const view = { ...shown, days: Math.min(state.days, shown.days) };
   drawActogram($('actogram'), view);
 }
 
-// The run shown in the actogram: the start whose days-to-entrain is the median
-// (or the first start, if none entrain).
-function exampleStart(starts) {
-  const ok = starts.filter((r) => r.entrained);
-  if (!ok.length) return starts[0].startDlmoClock;
-  const m = median(ok.map((r) => r.daysToEntrain));
-  return ok.find((r) => r.daysToEntrain === m).startDlmoClock;
+// ---------- starting day ----------
+
+// The actogram shows one run. By default it starts the day the free-running
+// clock naturally wakes you at lights-on; the arrows move that start an hour
+// at a time (natural wake that much earlier or later on day one).
+let shownResult = null;
+const MAX_OFFSET = 11;
+
+function showStart() {
+  if (!lastSchedule) return;
+  const s = lastSchedule, k = state.startOffset;
+  shownResult = k === 0 ? goalResult : simulate(s, { startDlmoClock: goalStartDlmo(s, k), days: DAYS });
+  const time = fmtClock(mod(s.lightsOn + k, 24));
+  const key = k === 0 ? 'acto.start.goal' : k > 0 ? 'acto.start.later' : 'acto.start.earlier';
+  const e = shownResult.entrainment;
+  const tail = e.entrained ? t('acto.start.locks', { n: e.daysToEntrain }) : t('acto.start.never');
+  $('ic-label').innerHTML = `${html(key, { time, h: Math.abs(k) })} ${tail}`;
+  $('ic-prev').disabled = k <= -MAX_OFFSET;
+  $('ic-next').disabled = k >= MAX_OFFSET + 1;
+  renderMain();
+}
+
+function bindStartArrows() {
+  for (const [id, d] of [['ic-prev', -1], ['ic-next', 1]]) {
+    $(id).addEventListener('click', () => {
+      state.startOffset = Math.max(-MAX_OFFSET, Math.min(MAX_OFFSET + 1, state.startOffset + d));
+      showStart();
+    });
+  }
 }
 
 // Where the clock settles from a few starting points: dlmo is the entrained
@@ -686,11 +714,12 @@ async function run() {
   const ex = await gate('exercise', (dlmo) => exerciseShift(mod(s.exercise.start + s.exercise.minutes / 120 - dlmo, 24), s.exercise.minutes));
   if (ex === undefined) return;
   state.exHelps = ex && ex.good; state.exSettles = ex?.settles;
-  const exStart = exampleStart(starts);
-  lastResult = simulate(s, { startDlmoClock: exStart, days: DAYS });
+  lastSchedule = s;
+  goalResult = simulate(s, { startDlmoClock: goalStartDlmo(s), days: DAYS });
+  lastResult = goalResult;
   const cost = costOf(starts);
   lastStarts = starts; lastCost = cost;
-  renderVerdict(starts, lastResult, cost);
+  renderVerdict(starts, lastResult, cost, goalResult);
   const okStarts = starts.filter((r) => r.entrained);
   state.settledDlmo = okStarts.length ? circMean(okStarts.map((r) => r.dlmoClock)) : null;
   // Windows from where the clock settles; if it never does, from a typical DLMO
@@ -702,7 +731,7 @@ async function run() {
   drawDayEditor();
   renderMelatonin();
   renderCost(cost);
-  renderMain();
+  showStart();
   renderPrc(lastResult);
   $('acto-hint').textContent = t('acto.hint');
 
@@ -715,7 +744,7 @@ async function run() {
 // AM/PM or 24-hour times: the viewer's choice if they made one, else their
 // locale's. Switching redraws everything that shows a time from the last run.
 const CLOCK_KEY = 'non24.clock12';
-let lastStarts = null, lastCost = null;
+let lastStarts = null, lastCost = null, lastSchedule = null, goalResult = null;
 
 function initClockFormat() {
   let saved = null;
@@ -729,9 +758,9 @@ function initClockFormat() {
       syncInputs();
       drawDayEditor();
       if (!lastResult) return;
-      renderVerdict(lastStarts, lastResult, lastCost);
+      renderVerdict(lastStarts, lastResult, lastCost, goalResult);
       renderCost(lastCost);
-      renderMain();
+      showStart();
       renderPrc(lastResult);
     });
   }
@@ -755,4 +784,5 @@ syncInputs();
 drawDayEditor();
 bindInputs();
 bindPanes();
+bindStartArrows();
 run();

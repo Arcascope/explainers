@@ -262,6 +262,12 @@ Days to entrain
 ## stats.typical
 Typical
 
+## stats.fromGoal
+Starting at your goal wake time
+
+## stats.anyStart
+From any start
+
 ## stats.dlmo
 DLMO
 
@@ -307,7 +313,28 @@ DLMO
 An example run showing entrainment. Each row is one day, plotted twice (48 hours) so a drifting clock looks like diagonal stripes, while entrainment is vertical stripes.
 
 ## acto.hint
-An example run. Each row is one day, plotted twice (48 hours) so a drifting clock shows as diagonal stripes and entrainment is vertical stripes.
+Each row is one day, plotted twice (48 hours) so a drifting clock shows as diagonal stripes and entrainment is vertical stripes. Use the arrows to start this day at a different point in your drift.
+
+## acto.start.goal
+Starting the day you naturally wake at your goal time, *{time}*, as in Larroque's VLiDACMel protocol.
+
+## acto.start.later
+Starting the day you naturally wake at *{time}*, {h} h after your goal.
+
+## acto.start.earlier
+Starting the day you naturally wake at *{time}*, {h} h before your goal.
+
+## acto.start.locks
+Locks on by day {n}.
+
+## acto.start.never
+Never locks on.
+
+## acto.start.prev
+Start on a day you wake earlier
+
+## acto.start.next
+Start on a day you wake later
 
 ## acto.days
 Days shown
@@ -474,6 +501,9 @@ Entrainment and cost
 ## method.entrain.p1
 A run counts as entrained when, over its last 30 days, melatonin onset stays within 30 minutes of the same clock time and drifts less than half a minute a day. "While you adjust" covers each run's days until it entrains (at least 7). "Sleepy-but-awake hours" counts lit hours when the model would have fallen asleep or stayed asleep if it could.
 
+## method.entrain.p3
+The actogram and the headline days assume you free-run until you naturally wake near your goal wake time and only then start this day, as Larroque's VLiDACMel protocol recommends. That takes the luck of the starting day out of the comparison. To find that day, the model free-runs, sleeping whenever it's sleepy and in this day's light while awake, and we start it where that natural wake-up lands on lights-on. "From any start" covers all 24 starting points.
+
 ## method.entrain.p2
 Every person differs. Caffeine and day-to-day variation are not modelled. Light sensitivity multiplies every light level before the model's clock sees it, so 2× treats 125 lux as 250; it doesn't change how alert light makes you.
 
@@ -494,6 +524,9 @@ Sources
 
 ## sources.skeldon
 Skeldon AC, Garcia TR, Cleator SF, della Monica C, Ravindran KKG, Revell VL, Dijk D-J. Method to determine whether sleep phenotypes are driven by endogenous circadian rhythms or environmental light by combining longitudinal data and personalised mathematical models. *PLOS Computational Biology* (2023).
+
+## sources.larroque
+Larroque SK. VLiDACMel: a therapy for the entrainment of treatment-resistant sighted non24 (2020, updated 2025). [doi:10.5281/zenodo.7512052](https://doi.org/10.5281/zenodo.7512052)
 
 ## sources.youngstedt
 Youngstedt SD, Elliott JA, Kripke DF. Human circadian phase–response curves for exercise. *Journal of Physiology* 597(8):2253–2268 (2019). [doi:10.1113/JP276943](https://doi.org/10.1113/JP276943)
