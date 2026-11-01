@@ -547,7 +547,9 @@ function renderMain() {
 // clock naturally wakes you at lights-on; the arrows move that start an hour
 // at a time (natural wake that much earlier or later on day one).
 let shownResult = null;
+// 24 one-hour starts, -11 .. +12 h; the arrows wrap round the cycle.
 const MAX_OFFSET = 11;
+const wrapOffset = (k) => mod(k + MAX_OFFSET, 24) - MAX_OFFSET;
 
 function showStart() {
   if (!lastSchedule) return;
@@ -560,30 +562,38 @@ function showStart() {
   const tail = e.entrained ? t('acto.start.locks', { n: e.daysToEntrain })
     : sc ? t('acto.start.scallop', { clock: fmtClock(sc.stallClock), every: sc.slipEveryDays }) : t('acto.start.never');
   $('ic-label').innerHTML = `${html(key, { time, h: Math.abs(k) })} ${tail}`;
-  $('ic-prev').disabled = k <= -MAX_OFFSET;
-  $('ic-next').disabled = k >= MAX_OFFSET + 1;
   renderMain();
+  showActoIntro();
 }
 
 // A one-time overlay on the actogram explaining the arrows. Once dismissed it
 // stays dismissed in this browser (and simply shows again if storage is off).
+// It appears only once the first actogram has been drawn, so there is always
+// a chart underneath to see through it and to reveal on Ok.
 const INTRO_KEY = 'non24.actoIntroSeen';
+let introPending = false;
 function initActoIntro() {
   let seen = false;
   try { seen = localStorage.getItem(INTRO_KEY) === '1'; } catch {}
   if (seen) return;
-  $('acto-intro').hidden = false;
+  introPending = true;
   $('acto-intro-ok').addEventListener('click', () => {
     $('acto-intro').hidden = true;
     try { localStorage.setItem(INTRO_KEY, '1'); } catch {}
+    renderMain();
     $('ic-next').focus();
   });
+}
+function showActoIntro() {
+  if (!introPending) return;
+  introPending = false;
+  $('acto-intro').hidden = false;
 }
 
 function bindStartArrows() {
   for (const [id, d] of [['ic-prev', -1], ['ic-next', 1]]) {
     $(id).addEventListener('click', () => {
-      state.startOffset = Math.max(-MAX_OFFSET, Math.min(MAX_OFFSET + 1, state.startOffset + d));
+      state.startOffset = wrapOffset(state.startOffset + d);
       showStart();
     });
   }

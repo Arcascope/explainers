@@ -71,7 +71,7 @@ Left alone in the dark, your clock would run {min} min earlier each day.
 Add realistic noise
 
 ## day.noise.hint
-Real days wobble. Lights on and lights off each move at random by about an hour (standard deviation) every day.
+Add noise to see how sensitive the schedule is
 
 ## clock.sens.label
 Light sensitivity

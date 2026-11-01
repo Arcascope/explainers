@@ -269,10 +269,10 @@ input[type="time"]:disabled { opacity: 0.6; }
 .acto-nav { position: relative; }
 .acto-intro {
   position: absolute; inset: 0; z-index: 2; display: flex; align-items: center; justify-content: center;
-  padding: 16px; border-radius: 12px; background: rgba(20, 7, 19, 0.55);
+  padding: 16px; border-radius: 12px; background: rgba(20, 7, 19, 0.3);
 }
 .acto-intro[hidden] { display: none; }
-.acto-intro-card { max-width: 36ch; text-align: center; padding: 16px 20px; border-radius: 12px; background: rgba(20, 7, 19, 0.78); box-shadow: 0 6px 24px rgba(0, 0, 0, 0.45); }
+.acto-intro-card { max-width: 36ch; text-align: center; padding: 16px 20px; border-radius: 12px; background: rgba(20, 7, 19, 0.62); box-shadow: 0 6px 24px rgba(0, 0, 0, 0.35); }
 .acto-intro-card p { margin: 0 0 14px; color: var(--ink-50); font-size: 1rem; line-height: 1.5; }
 .acto-intro-ok {
   font: 600 0.9rem var(--font-body); color: var(--ink-950); background: var(--sun-400);
