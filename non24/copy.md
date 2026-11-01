@@ -67,6 +67,12 @@ Left alone in the dark, your clock would run {min} min later each day.
 ## clock.tau.hint.early
 Left alone in the dark, your clock would run {min} min earlier each day.
 
+## day.noise.toggle
+Add realistic noise
+
+## day.noise.hint
+Real days wobble. Lights on and lights off each move at random by about an hour (standard deviation) every day.
+
 ## clock.sens.label
 Light sensitivity
 
@@ -226,6 +232,12 @@ Entrains, at a cost
 ## verdict.status.unliveable
 Don't do this
 
+## verdict.status.scallop
+Almost holds
+
+## verdict.scallop
+This day almost holds your clock. It stalls near *{clock}* for about {stall} days, then slips and comes round again every *{every} days*. This is relative coordination, which shows up as scalloping on an actogram. Brighter days can help a clock like this lock on.
+
 ## verdict.ok
 Your clock locks on to this day within *{days}*, with natural melatonin onset settling near *{dlmo}*.
 
@@ -329,6 +341,9 @@ Locks on by day {n}.
 
 ## acto.start.never
 Never locks on.
+
+## acto.start.scallop
+Never locks on: stalls near {clock}, then slips every {every} days.
 
 ## acto.start.prev
 Start on a day you wake earlier

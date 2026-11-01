@@ -65,6 +65,22 @@ are kept inside the lights-on hours.
 before it reaches the oscillator (`lightSensitivity` in the schedule), so 2× at
 125 lux is the default person at 250 lux. Sleep and forced wake are unchanged.
 
+**Starting day.** The actogram and headline days start on the day the person's
+free-running clock (sleeping when sleepy, in the day's light while awake) naturally
+wakes them at lights-on, after Larroque's VLiDACMel protocol
+(doi:10.5281/zenodo.7512052). Arrows step the start an hour at a time.
+
+**Realistic noise.** Optional: each day's lights-on and lights-off move by an
+independent normal offset (SD 1 h, clipped at ±2.5 h), seeded per starting phase
+so runs are repeatable. Entrainment then allows ±1 h of DLMO wobble and judges
+drift over 60 days (0.75 min/day).
+
+**Relative coordination.** A run that never locks on but whose 5-day-smoothed
+DLMO drift falls below 35% of its mean and rises above 130% of it, with a stall
+(under half the mean) of 5+ days, is reported as scalloping: where it stalls,
+for how long, and how often it slips. In that case a suggestion counts as
+helping when it cuts the mean slip rate by 20% or more.
+
 **Exercise.** At the midpoint of each bout, the oscillator is rotated in the
 (x, −xc) plane by the PRC value for the current body-clock time, measured in hours
 after DLMO (CBTmin − 7 h). Youngstedt et al. gave exercise on three consecutive days,

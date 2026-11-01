@@ -13,6 +13,10 @@ const STEPS_PER_DAY = Math.round(24 / DT);
 export const SLEEP_PARAMS = Object.freeze({ H0: 12.2 });
 const MIN_CBT_SEPARATION = 13; // hours, as in the circadian package
 const ENTRAINED_TOLERANCE = 0.5; // hours of DLMO wobble still counted as entrained
+// With realistic noise DLMO wobbles even once locked on, and the 30-day trend
+// picks up ±1 min/day of pure noise: allow a wider band, and judge drift over
+// 60 days instead.
+const NOISY = Object.freeze({ tolerance: 1, driftWindow: 60, maxDrift: 0.75 });
 const SETTLE_WINDOW = 30; // days of stable DLMO needed to call it entrained
 const MAX_DRIFT = 0.5; // min/day of residual DLMO drift still counted as entrained
 
@@ -53,6 +57,54 @@ function wakeForced(schedule, clock) {
   if (mode === 'alarm') {
     const d = circDiff(clock, schedule.lightsOn);
     return d >= 0 && d < DT - 1e-9;
+  }
+  return false;
+}
+
+// ---------- realistic noise ----------
+
+// With schedule.noise.enabled, each day's lights-on and lights-off move by an
+// independent random amount (normal, NOISE_SD hours, clipped at ±NOISE_MAX),
+// the way real days wobble. A seeded generator keeps every run repeatable.
+export const NOISE_SD = 1;
+const NOISE_MAX = 2.5;
+
+function mulberry32(seed) {
+  let a = seed >>> 0;
+  return () => {
+    a = (a + 0x6D2B79F5) >>> 0;
+    let t = a;
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+// Lights-on/off times (absolute hours) for each day, shifted by noise, or null
+// for an exact day. Day k's lights come on at 24 k + lightsOn (+ jitter).
+function lightPlan(schedule, days, seed) {
+  if (!schedule.noise?.enabled) return null;
+  const rand = mulberry32(seed);
+  const gauss = () => {
+    const u = Math.max(rand(), 1e-12), v = rand();
+    return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v);
+  };
+  const jitter = () => Math.max(-NOISE_MAX, Math.min(NOISE_MAX, NOISE_SD * gauss()));
+  const lit = mod(schedule.lightsOff - schedule.lightsOn, 24);
+  const plan = [];
+  for (let k = -1; k <= days + 1; k++) {
+    const on = 24 * k + schedule.lightsOn + jitter();
+    plan.push({ on, off: 24 * k + schedule.lightsOn + lit + jitter() });
+  }
+  return plan;
+}
+
+// Whether the lights are on at absolute time t under a noisy plan.
+function litIn(plan, schedule, t) {
+  const k = Math.floor((t - schedule.lightsOn) / 24);
+  for (const j of [k, k + 1, k - 1]) {
+    const w = plan[j + 1];
+    if (w && t >= w.on && t < w.off) return true;
   }
   return false;
 }
@@ -116,7 +168,7 @@ function sleepEpisodes(sleep, dt) {
 
 // schedule: { tau, lightSensitivity, lightsOn, lightsOff, dayLux, nightLux, wakeMode,
 //             exercise: { enabled, start, minutes }, melatonin: { enabled, start } }
-export function simulate(schedule, { startDlmoClock = 21, days = 90, detail = true } = {}) {
+export function simulate(schedule, { startDlmoClock = 21, days = 90, detail = true, seed = 1 } = {}) {
   const model = new Skeldon23({ tauc: schedule.tau, ...SLEEP_PARAMS }, initialStateFor(schedule.tau, startDlmoClock), 0);
   const p = model.p;
   const steps = Math.round((days * 24) / DT);
@@ -133,6 +185,8 @@ export function simulate(schedule, { startDlmoClock = 21, days = 90, detail = tr
   // Light sensitivity multiplies the lux the clock sees (2 = every light acts
   // twice as bright on this person's clock). It doesn't change the schedule itself.
   const sens = schedule.lightSensitivity ?? 1;
+  const plan = lightPlan(schedule, days, seed);
+  const lightWindows = plan && detail ? plan.map((w) => ({ start: w.on, end: w.off })) : null;
   const ex = schedule.exercise;
   const exMid = ex && ex.enabled ? mod(ex.start + ex.minutes / 120, 24) : null;
   // A daily melatonin dose (schedule.melatonin = { enabled, start }) shifts the
@@ -162,8 +216,10 @@ export function simulate(schedule, { startDlmoClock = 21, days = 90, detail = tr
     const clock = mod(t, 24);
     const step = i % STEPS_PER_DAY;
     const exercising = inExercise(schedule, clock);
-    const forceWake = exercising || wakeForced(schedule, clock);
-    model.step(sens * luxAt(schedule, clock), DT, forceWake);
+    const lit = plan ? litIn(plan, schedule, t) : isLit(schedule, clock);
+    const mode = schedule.wakeMode ?? 'enforced';
+    const forceWake = exercising || (plan && mode === 'enforced' ? lit : wakeForced(schedule, clock));
+    model.step(sens * (lit ? schedule.dayLux : schedule.nightLux), DT, forceWake);
 
     // One exercise bout's phase shift when the clock passes the bout midpoint.
     if (step === exStep) {
@@ -184,14 +240,16 @@ export function simulate(schedule, { startDlmoClock = 21, days = 90, detail = tr
     if (detail) sleep[i] = model.sleep;
     const day = Math.min(Math.floor((t - DT / 2) / 24), days - 1);
     if (model.sleep) daily.asleep[day] += DT;
-    else if (!isLit(schedule, clock)) daily.awakeInDim[day] += DT;
+    else if (!lit) daily.awakeInDim[day] += DT;
     if (forceWake && model.wantsSleep) daily.fightingSleep[day] += DT;
   }
 
   const dlmos = cbts.map((c) => c - p.cbt_to_dlmo).filter((d) => d >= 0);
-  const result = { schedule, days, dlmos, daily, entrainment: analyze(dlmos, days) };
+  const entrainment = analyze(dlmos, days, schedule.noise?.enabled ? NOISY : undefined);
+  const result = { schedule, days, dlmos, daily, entrainment, scallop: relativeCoordination(dlmos, entrainment.entrained) };
   if (detail) {
     result.sleepEpisodes = sleepEpisodes(sleep, DT);
+    result.lightWindows = lightWindows;
     result.bouts = bouts;
     result.doses = doses;
     result.sleepSummary = summarizeSleep(result.sleepEpisodes, days);
@@ -212,28 +270,66 @@ function slope(y) {
 // ±ENTRAINED_TOLERANCE of its mean clock time AND has no residual trend (a slow
 // drift of a few min/day can sit inside the tolerance band for weeks and then
 // slip a whole cycle).
-export function analyze(dlmos, days) {
+export function analyze(dlmos, days, { tolerance = ENTRAINED_TOLERANCE, driftWindow = SETTLE_WINDOW, maxDrift = MAX_DRIFT } = {}) {
   const clocks = dlmos.map((d) => mod(d, 24));
   const n = clocks.length;
   const none = (driftMinPerDay) => ({ entrained: false, driftMinPerDay, daysToEntrain: null, dlmoClock: null });
   if (n < 3) return none(0);
   // Drift from the trend of successive markers: dlmo[i] - 24 i, so one marker per
   // 24 h is flat and a skipped/extra cycle shows up as a 24 h jump.
-  const tail = dlmos.slice(-SETTLE_WINDOW);
+  const tail = dlmos.slice(-driftWindow);
   const driftMinPerDay = slope(tail.map((d, i) => d - 24 * i)) * 60;
   if (n < SETTLE_WINDOW + 1) return none(driftMinPerDay);
   const last = clocks.slice(-SETTLE_WINDOW);
   const mean = circMean(last);
-  const stable = Math.abs(driftMinPerDay) < MAX_DRIFT
-    && last.every((c) => Math.abs(circDiff(c, mean)) < ENTRAINED_TOLERANCE)
+  const stable = Math.abs(driftMinPerDay) < maxDrift
+    && last.every((c) => Math.abs(circDiff(c, mean)) < tolerance)
     && dlmos[n - 1] > (days - 3) * 24;
   if (!stable) return none(driftMinPerDay);
 
   let k = n - 1;
-  while (k > 0 && Math.abs(circDiff(clocks[k - 1], mean)) < ENTRAINED_TOLERANCE) k--;
+  while (k > 0 && Math.abs(circDiff(clocks[k - 1], mean)) < tolerance) k--;
   // Day numbers are 1-based: the day holding the first DLMO of the settled run
   // is the first fully entrained day (day 1 if it was aligned from the start).
   return { entrained: true, driftMinPerDay, daysToEntrain: Math.floor(dlmos[k] / 24) + 1, dlmoClock: mean };
+}
+
+// Relative coordination ("scalloping"): a clock that never locks on but whose
+// daily drift isn't steady. It slows almost to a stop when the light lands in
+// the right part of its cycle, then speeds up and slips a whole cycle. Returns
+// null when the drift is steady (or the clock locks on). Uses the run after its
+// first 10 days, smoothed over 5 days.
+export function relativeCoordination(dlmos, entrained) {
+  if (entrained || dlmos.length < 40) return null;
+  const d = dlmos.filter((x) => x >= 10 * 24);
+  if (d.length < 30) return null;
+  const steps = d.slice(1).map((x, i) => (x - d[i] - 24) * 60); // min/day
+  const sm = steps.map((_, i) => {
+    const w = steps.slice(Math.max(0, i - 2), i + 3);
+    return w.reduce((a, b) => a + b, 0) / w.length;
+  });
+  const meanDrift = ((d[d.length - 1] - d[0]) / (d.length - 1) - 24) * 60;
+  const dir = Math.sign(meanDrift) || 1;
+  const speed = sm.map((x) => dir * x);
+  const slow = Math.min(...speed), fast = Math.max(...speed);
+  if (Math.abs(meanDrift) < 1 || slow > 0.35 * Math.abs(meanDrift) || fast < 1.3 * Math.abs(meanDrift)) return null;
+  // The longest stretch drifting under half the average: the stall.
+  const limit = 0.5 * Math.abs(meanDrift);
+  let best = [0, 0], start = null;
+  for (let i = 0; i <= speed.length; i++) {
+    if (i < speed.length && speed[i] < limit) { if (start === null) start = i; continue; }
+    if (start !== null && i - start > best[1] - best[0]) best = [start, i];
+    start = null;
+  }
+  if (best[1] - best[0] < 5) return null;
+  return {
+    meanDriftMinPerDay: meanDrift,
+    slowMinPerDay: Math.max(0, Math.round(slow)),
+    fastMinPerDay: Math.round(fast),
+    stallDays: best[1] - best[0],
+    stallClock: circMean(d.slice(best[0], best[1] + 1).map((x) => mod(x, 24))),
+    slipEveryDays: Math.round((24 * 60) / Math.abs(meanDrift)),
+  };
 }
 
 function summarizeSleep(episodes, days) {
@@ -288,8 +384,8 @@ export async function sweepStarts(schedule, { starts = 24, days = 120, onProgres
   const out = [];
   for (let i = 0; i < starts; i++) {
     const startDlmoClock = (24 * i) / starts;
-    const r = simulate(schedule, { startDlmoClock, days, detail: false });
-    out.push({ startDlmoClock, daily: r.daily, ...r.entrainment });
+    const r = simulate(schedule, { startDlmoClock, days, detail: false, seed: i + 1 });
+    out.push({ startDlmoClock, daily: r.daily, scallop: r.scallop, ...r.entrainment });
     onProgress?.((i + 1) / starts);
     await new Promise((res) => setTimeout(res, 0));
   }

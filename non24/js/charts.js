@@ -98,8 +98,20 @@ export function drawActogram(canvas, result) {
     const y = rowY(d);
     g.fillStyle = s.nightLux > 0 ? c.dim : c.row;
     round(X(0), y, plotW, barH, 3);
+    if (result.lightWindows) continue; // noisy days: drawn per day below
     g.fillStyle = lightColor;
     for (const [a, b] of runs) round(X(a), y, X(b) - X(a), barH, 2);
+  }
+  // With realistic noise each day has its own lights-on/off times.
+  if (result.lightWindows) {
+    g.fillStyle = lightColor;
+    for (const w of result.lightWindows) {
+      for (let d = Math.floor(w.start / 24) - 1; d <= Math.floor(w.end / 24); d++) {
+        if (d < 0 || d >= days) continue;
+        const a = Math.max(w.start - d * 24, 0), b = Math.min(w.end - d * 24, 48);
+        if (b > a) round(X(a), rowY(d), X(b) - X(a), barH, 2);
+      }
+    }
   }
 
   // sleep

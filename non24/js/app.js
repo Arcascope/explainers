@@ -25,6 +25,7 @@ const median = (a) => { const b = [...a].sort((x, y) => x - y); return b[Math.fl
 const state = {
   tau: 24.8,
   lightSensitivity: 1, // multiplies all light the clock sees
+  noise: false, // day-to-day wobble in lights on/off
   lightsOn: 7,
   lightsOff: 23,
   dayLux: 125, // typical home light at eye level
@@ -53,6 +54,7 @@ const schedule = () => ({
   dayLux: state.dayLux,
   nightLux: state.nightLux,
   wakeMode: 'enforced',
+  noise: { enabled: state.noise },
   exercise: { ...state.exercise },
   melatonin: { ...state.melatonin, enabled: state.melatonin.enabled && melOffered() },
 });
@@ -103,7 +105,13 @@ function helps(base, next) {
     if (nb > 0 && cn.asleep < cb.asleep - SLEEP_CUT) return false;
   }
   if (nn !== nb) return nn > nb;
-  if (nn === 0) return false;
+  // Neither locks on: a clock that almost holds (scalloping) is helped when it
+  // slips clearly more slowly, i.e. stalls for longer before each slip.
+  if (nn === 0) {
+    if (!base.some((r) => r.scallop)) return false;
+    const rate = (rows) => median(rows.map((r) => Math.abs(r.scallop ? r.scallop.meanDriftMinPerDay : r.driftMinPerDay)));
+    return rate(next) < 0.8 * rate(base);
+  }
   const days = (rows) => median(ok(rows).map((r) => r.daysToEntrain));
   const db = days(base), dn = days(next), rb = DIFFICULTY_RANK[difficulty(cb)[2]], rn = DIFFICULTY_RANK[difficulty(cn)[2]];
   return (dn < db && rn <= rb) || (dn <= db && rn < rb);
@@ -261,6 +269,7 @@ function bindInputs() {
   on('sens', 'input', (t) => { state.lightSensitivity = 2 ** Number(t.value); });
   on('lights-on', 'change', (t) => { if (t.value) state.lightsOn = parseTime(t.value); });
   on('lights-off', 'change', (t) => { if (t.value) state.lightsOff = parseTime(t.value); });
+  on('noise-on', 'change', (t) => { state.noise = t.checked; });
   on('ex-on', 'change', (t) => { state.exercise.enabled = t.checked; });
   // Suggestions apply their change to the day (see tuneChanges).
   for (const k of ['night', 'dim', 'bright']) {
@@ -384,7 +393,10 @@ function renderVerdict(starts, example, cost, goal = example) {
     $('tab-status').textContent = t(status);
     $('verdict-main').innerHTML = html(key, vars);
   };
-  if (ok.length === 0) {
+  const scallop = goal.scallop ?? null;
+  if (ok.length === 0 && scallop) {
+    set('some', 'verdict.status.scallop', 'verdict.scallop', { clock: fmtClock(scallop.stallClock), stall: scallop.stallDays, every: scallop.slipEveryDays });
+  } else if (ok.length === 0) {
     set('no', 'verdict.status.no', 'verdict.no', { drift: driftText(median(starts.map((r) => r.driftMinPerDay))) });
   } else {
     const d = ok.map((r) => r.daysToEntrain);
@@ -544,7 +556,9 @@ function showStart() {
   const time = fmtClock(mod(s.lightsOn + k, 24));
   const key = k === 0 ? 'acto.start.goal' : k > 0 ? 'acto.start.later' : 'acto.start.earlier';
   const e = shownResult.entrainment;
-  const tail = e.entrained ? t('acto.start.locks', { n: e.daysToEntrain }) : t('acto.start.never');
+  const sc = shownResult.scallop;
+  const tail = e.entrained ? t('acto.start.locks', { n: e.daysToEntrain })
+    : sc ? t('acto.start.scallop', { clock: fmtClock(sc.stallClock), every: sc.slipEveryDays }) : t('acto.start.never');
   $('ic-label').innerHTML = `${html(key, { time, h: Math.abs(k) })} ${tail}`;
   $('ic-prev').disabled = k <= -MAX_OFFSET;
   $('ic-next').disabled = k >= MAX_OFFSET + 1;
