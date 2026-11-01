@@ -139,7 +139,13 @@
         <label for="days" data-copy="acto.days"></label>
         <select id="days"><option>14</option><option selected>30</option><option>60</option><option>90</option></select>
       </div>
-      <div class="acto-nav">
+      <div class="acto-nav" id="acto-nav">
+        <div class="acto-intro" id="acto-intro" role="dialog" aria-labelledby="acto-intro-text" hidden>
+          <div class="acto-intro-card">
+            <p id="acto-intro-text" data-copy="acto.intro.text"></p>
+            <button type="button" class="acto-intro-ok" id="acto-intro-ok" data-copy="acto.intro.ok"></button>
+          </div>
+        </div>
         <button type="button" class="acto-arrow" id="ic-prev" data-copy-aria="acto.start.prev"><span aria-hidden="true">‹</span></button>
         <div class="acto-wrap"><canvas id="actogram" data-copy-aria="acto.aria"></canvas></div>
         <button type="button" class="acto-arrow" id="ic-next" data-copy-aria="acto.start.next"><span aria-hidden="true">›</span></button>

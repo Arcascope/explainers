@@ -266,6 +266,19 @@ input[type="time"]:disabled { opacity: 0.6; }
 .acto-arrow:focus-visible { outline: 2px solid currentColor; outline-offset: 2px; }
 .acto-arrow:disabled { opacity: 0.35; cursor: default; }
 .acto-start { margin-top: 8px; }
+.acto-nav { position: relative; }
+.acto-intro {
+  position: absolute; inset: 0; z-index: 2; display: flex; align-items: center; justify-content: center;
+  padding: 16px; border-radius: 12px; background: rgba(20, 7, 19, 0.82); backdrop-filter: blur(2px);
+}
+.acto-intro[hidden] { display: none; }
+.acto-intro-card { max-width: 34ch; text-align: center; }
+.acto-intro-card p { margin: 0 0 14px; color: var(--ink-50); font-size: 1rem; line-height: 1.5; }
+.acto-intro-ok {
+  font: 600 0.9rem var(--font-body); color: var(--ink-950); background: var(--sun-400);
+  border: 0; border-radius: 999px; padding: 8px 26px; cursor: pointer;
+}
+.acto-intro-ok:focus-visible { outline: 2px solid var(--ink-50); outline-offset: 2px; }
 @media (max-width: 520px) {
   .acto-nav { gap: 3px; }
   .acto-arrow { width: 20px; font-size: 1.2rem; }
@@ -305,3 +318,4 @@ input[type="time"]:disabled { opacity: 0.6; }
 @media (prefers-reduced-motion: no-preference) {
   .verdict-main, .status { transition: color 0.2s, background-color 0.2s; }
 }
+.acto-nav .acto-arrow { position: relative; z-index: 3; } /* stay visible above the intro overlay */

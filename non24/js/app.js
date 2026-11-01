@@ -565,6 +565,21 @@ function showStart() {
   renderMain();
 }
 
+// A one-time overlay on the actogram explaining the arrows. Once dismissed it
+// stays dismissed in this browser (and simply shows again if storage is off).
+const INTRO_KEY = 'non24.actoIntroSeen';
+function initActoIntro() {
+  let seen = false;
+  try { seen = localStorage.getItem(INTRO_KEY) === '1'; } catch {}
+  if (seen) return;
+  $('acto-intro').hidden = false;
+  $('acto-intro-ok').addEventListener('click', () => {
+    $('acto-intro').hidden = true;
+    try { localStorage.setItem(INTRO_KEY, '1'); } catch {}
+    $('ic-next').focus();
+  });
+}
+
 function bindStartArrows() {
   for (const [id, d] of [['ic-prev', -1], ['ic-next', 1]]) {
     $(id).addEventListener('click', () => {
@@ -799,4 +814,5 @@ drawDayEditor();
 bindInputs();
 bindPanes();
 bindStartArrows();
+initActoIntro();
 run();

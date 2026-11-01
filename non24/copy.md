@@ -236,7 +236,7 @@ Don't do this
 Almost holds
 
 ## verdict.scallop
-This day almost holds your clock. It stalls near *{clock}* for about {stall} days, then slips and comes round again every *{every} days*. This is relative coordination, which shows up as scalloping on an actogram. Brighter days can help a clock like this lock on.
+This day almost holds your clock. It stalls near *{clock}* for about {stall} days, then slips and comes round again every *{every} days*.
 
 ## verdict.ok
 Your clock locks on to this day within *{days}*, with natural melatonin onset settling near *{dlmo}*.
@@ -340,10 +340,16 @@ Starting the day you naturally wake at *{time}*, {h} h before your goal.
 Locks on by day {n}.
 
 ## acto.start.never
-Never locks on.
+Never fully locks on.
 
 ## acto.start.scallop
-Never locks on: stalls near {clock}, then slips every {every} days.
+Never fully locks on: stalls near {clock}, then slips every {every} days. This is relative coordination, which shows up as scalloping on an actogram. Brighter days can help a clock like this lock on.
+
+## acto.intro.text
+Different starting points in your cycle will change how you respond. Toggle left and right to see different trajectories.
+
+## acto.intro.ok
+Ok
 
 ## acto.start.prev
 Start on a day you wake earlier
