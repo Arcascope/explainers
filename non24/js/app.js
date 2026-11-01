@@ -1,4 +1,4 @@
-import { simulate, sweepStarts, goalStartDlmo, naturalWakeAfterDlmo, mod, circMean, circDiff } from './simulate.js';
+import { simulate, sweepStarts, goalStartDlmo, mod, circMean, circDiff } from './simulate.js';
 import { prcCurve, PRC_POINTS, exerciseZones, exerciseShift, melatoninCurve, melatoninZones, melatoninShift } from './prc.js';
 import { drawActogram, drawPrc, prcScale, fmtClock, fmtClockRange, fmtTimeValue, fmtHourTick, setClock12, lightTier } from './charts.js';
 import { loadCopy, applyCopy, t, html } from './copy.js';
