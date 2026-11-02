@@ -271,8 +271,8 @@ about on time
 ## stats.daysToEntrain
 Days to entrain
 
-## stats.fastest
-Fastest lock-on
+## stats.typical
+Typical lock-on
 
 ## stats.slowest
 Slowest lock-on
@@ -520,7 +520,7 @@ Entrainment and cost
 A run counts as entrained when, over its last 30 days, melatonin onset stays within 30 minutes of the same clock time and drifts less than half a minute a day. "While you adjust" covers each run's days until it entrains (at least 7). "Sleepy-but-awake hours" counts lit hours when the model would have fallen asleep or stayed asleep if it could.
 
 ## method.entrain.p3
-The actogram first shows what happens if you free-run until you naturally wake near your goal wake time and only then start this day, as Larroque's [VLiDACMel protocol](https://circadiaware.github.io/VLiDACMel-entrainment-therapy-non24/SleepNon24VLiDACMel.html) recommends. That takes the luck of the starting day out of the comparison. To find that day, the model free-runs, sleeping whenever it's sleepy and in this day's light while awake, and we start it where that natural wake-up lands on lights-on. Fastest and slowest lock-on come from all 24 starting points.
+The actogram first shows what happens if you free-run until you naturally wake near your goal wake time and only then start this day, as Larroque's [VLiDACMel protocol](https://circadiaware.github.io/VLiDACMel-entrainment-therapy-non24/SleepNon24VLiDACMel.html) recommends. That takes the luck of the starting day out of the comparison. To find that day, the model free-runs, sleeping whenever it's sleepy and in this day's light while awake, and we start it where that natural wake-up lands on lights-on. Typical and slowest lock-on come from all 24 starting points.
 
 ## method.entrain.p2
 Every person differs. Caffeine and day-to-day variation are not modelled. Light sensitivity multiplies every light level before the model's clock sees it, so 2× treats 125 lux as 250; it doesn't change how alert light makes you.

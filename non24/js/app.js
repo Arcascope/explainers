@@ -401,7 +401,6 @@ function renderVerdict(starts, example, cost, goal = example) {
   } else {
     const d = ok.map((r) => r.daysToEntrain);
     const slowest = Math.max(...d);
-    const fastest = Math.min(...d);
     const dayCount = (n) => (n === 1 ? t('range.day') : t('range.days', { n }));
     const dlmo = circMean(ok.map((r) => r.dlmoClock));
     if (unliveable(cost.late)) {
@@ -415,7 +414,7 @@ function renderVerdict(starts, example, cost, goal = example) {
     } else {
       set('ok', 'verdict.status.ok', 'verdict.ok', {});
     }
-    stats.push([t('stats.fastest'), dayCount(fastest)], [t('stats.slowest'), dayCount(slowest)], [t('stats.dlmo'), fmtClock(dlmo)]);
+    stats.push([t('stats.typical'), dayCount(median(d))], [t('stats.slowest'), dayCount(slowest)], [t('stats.dlmo'), fmtClock(dlmo)]);
   }
   if (example.sleepSummary && example.entrainment.entrained) {
     const m = Math.round(example.sleepSummary.hoursPerDay * 12) * 5; // nearest 5 min
