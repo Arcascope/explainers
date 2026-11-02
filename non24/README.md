@@ -65,7 +65,7 @@ are kept inside the lights-on hours.
 before it reaches the oscillator (`lightSensitivity` in the schedule), so 2× at
 125 lux is the default person at 250 lux. Sleep and forced wake are unchanged.
 
-**Starting day.** The actogram and headline days start on the day the person's
+**Starting day.** The actogram first shows the run that starts on the day the person's
 free-running clock (sleeping when sleepy, in the day's light while awake) naturally
 wakes them at lights-on, after Larroque's VLiDACMel protocol
 (doi:10.5281/zenodo.7512052). Arrows step the start an hour at a time.

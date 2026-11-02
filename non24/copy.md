@@ -86,7 +86,7 @@ The model's average person. Slide right if light affects you more, left if less.
 Every light acts {x}× as bright on your clock as it would for the average person.
 
 ## clock.sens.hint.less
-Every light acts on your clock like one {x}× dimmer would for the average person.
+You need {x}× the photons to get the same effect as an average person.
 
 ---
 
@@ -239,25 +239,25 @@ Almost holds
 This day almost holds your clock. It stalls near *{clock}* for about {stall} days, then slips and comes round again every *{every} days*.
 
 ## verdict.ok
-Your clock locks on to this day within *{days}*, with natural melatonin onset settling near *{dlmo}*.
+Your clock locks on to this day.
 
 ## verdict.ok.costly
-Your clock locks on within *{days}*, but only by sleep-depriving you.
+Your clock locks on, but only by sleep-depriving you.
 
 ## verdict.unliveable
 Your clock might lock on, but you'd barely sleep or spend most of the day fighting sleep.
 
 ## verdict.some
-Your clock usually locks on, within *{days}*, but not always: sometimes it keeps drifting.
+Your clock usually locks on, but not always: sometimes it keeps drifting.
 
 ## verdict.no
 This day can't hold your clock. It keeps drifting about *{drift}*.
 
+## range.day
+1 day
+
 ## range.days
 {n} days
-
-## range.upTo
-up to {n}
 
 ## drift.none
 about on time
@@ -271,14 +271,11 @@ about on time
 ## stats.daysToEntrain
 Days to entrain
 
-## stats.typical
-Typical
+## stats.fastest
+Fastest lock-on
 
-## stats.fromGoal
-Starting at your goal wake time
-
-## stats.anyStart
-From any start
+## stats.slowest
+Slowest lock-on
 
 ## stats.dlmo
 DLMO
@@ -523,7 +520,7 @@ Entrainment and cost
 A run counts as entrained when, over its last 30 days, melatonin onset stays within 30 minutes of the same clock time and drifts less than half a minute a day. "While you adjust" covers each run's days until it entrains (at least 7). "Sleepy-but-awake hours" counts lit hours when the model would have fallen asleep or stayed asleep if it could.
 
 ## method.entrain.p3
-The actogram and the headline days assume you free-run until you naturally wake near your goal wake time and only then start this day, as Larroque's [VLiDACMel protocol](https://circadiaware.github.io/VLiDACMel-entrainment-therapy-non24/SleepNon24VLiDACMel.html) recommends. That takes the luck of the starting day out of the comparison. To find that day, the model free-runs, sleeping whenever it's sleepy and in this day's light while awake, and we start it where that natural wake-up lands on lights-on. "From any start" covers all 24 starting points.
+The actogram first shows what happens if you free-run until you naturally wake near your goal wake time and only then start this day, as Larroque's [VLiDACMel protocol](https://circadiaware.github.io/VLiDACMel-entrainment-therapy-non24/SleepNon24VLiDACMel.html) recommends. That takes the luck of the starting day out of the comparison. To find that day, the model free-runs, sleeping whenever it's sleepy and in this day's light while awake, and we start it where that natural wake-up lands on lights-on. Fastest and slowest lock-on come from all 24 starting points.
 
 ## method.entrain.p2
 Every person differs. Caffeine and day-to-day variation are not modelled. Light sensitivity multiplies every light level before the model's clock sees it, so 2× treats 125 lux as 250; it doesn't change how alert light makes you.

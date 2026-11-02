@@ -381,7 +381,7 @@ function renderMelatonin() {
 const unliveable = (c) => c.asleep < 4.5 || c.fighting > 10 || c.dim > 8;
 
 // goal: the run started the day natural wake-up lands on lights-on (the default
-// assumption, after Larroque's VLiDACMel protocol); its days lead the verdict.
+// assumption, after Larroque's VLiDACMel protocol).
 function renderVerdict(starts, example, cost, goal = example) {
   const ok = starts.filter((r) => r.entrained);
   const pill = $('pill');
@@ -401,22 +401,21 @@ function renderVerdict(starts, example, cost, goal = example) {
   } else {
     const d = ok.map((r) => r.daysToEntrain);
     const slowest = Math.max(...d);
-    const goalDays = goal.entrainment.entrained ? goal.entrainment.daysToEntrain : null;
-    const days = t('range.days', { n: goalDays ?? slowest });
+    const fastest = Math.min(...d);
+    const dayCount = (n) => (n === 1 ? t('range.day') : t('range.days', { n }));
     const dlmo = circMean(ok.map((r) => r.dlmoClock));
     if (unliveable(cost.late)) {
       set('no', 'verdict.status.unliveable', 'verdict.unliveable', {});
     } else if (ok.length < starts.length) {
-      set('some', 'verdict.status.some', 'verdict.some', { days });
+      set('some', 'verdict.status.some', 'verdict.some', {});
     } else if (difficulty({ ...cost.late, dim: 0 })[2] === 'hard') {
       // "Only by sleep-depriving you": hard on sleep or sleepiness alone (a long
       // dim-light wait with plenty of sleep makes the day hard, not depriving).
-      set('some', 'verdict.status.costly', 'verdict.ok.costly', { days });
+      set('some', 'verdict.status.costly', 'verdict.ok.costly', {});
     } else {
-      set('ok', 'verdict.status.ok', 'verdict.ok', { days, dlmo: fmtClock(dlmo) });
+      set('ok', 'verdict.status.ok', 'verdict.ok', {});
     }
-    if (goalDays !== null) stats.push([t('stats.fromGoal'), t('range.days', { n: goalDays })]);
-    stats.push([t('stats.anyStart'), t('range.upTo', { n: slowest })], [t('stats.dlmo'), fmtClock(dlmo)]);
+    stats.push([t('stats.fastest'), dayCount(fastest)], [t('stats.slowest'), dayCount(slowest)], [t('stats.dlmo'), fmtClock(dlmo)]);
   }
   if (example.sleepSummary && example.entrainment.entrained) {
     const m = Math.round(example.sleepSummary.hoursPerDay * 12) * 5; // nearest 5 min
