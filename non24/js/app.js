@@ -1,4 +1,4 @@
-import { simulate, sweepStarts, mod, circMean, circDiff } from './simulate.js';
+import { simulate, sweepStarts, goalStartDlmo, mod, circMean, circDiff } from './simulate.js';
 import { prcCurve, PRC_POINTS, exerciseZones, exerciseShift, melatoninCurve, melatoninZones, melatoninShift } from './prc.js';
 import { drawActogram, drawPrc, prcScale, fmtClock, fmtClockRange, fmtTimeValue, fmtHourTick, setClock12, lightTier } from './charts.js';
 import { loadCopy, applyCopy, t, html } from './copy.js';
@@ -16,12 +16,16 @@ const DAY_LUX_LEVELS = [125, 250, 500, 10000]; // matches the light chips
 const NIGHT_LUX_LEVELS = [5, 15, 40]; // matches the dim-light chips
 const DAYS = 120;
 
+// 0.25 -> "0.25", 1.41 -> "1.4"; keeps the slider readout short.
+const fmtSens = (x) => (x >= 10 ? x.toFixed(0) : x >= 1 ? String(Number(x.toFixed(1))) : String(Number(x.toFixed(2))));
 const parseTime = (v) => { const [h, m] = v.split(':').map(Number); return h + m / 60; };
 const mean = (a) => (a.length ? a.reduce((x, y) => x + y, 0) / a.length : 0);
 const median = (a) => { const b = [...a].sort((x, y) => x - y); return b[Math.floor(b.length / 2)]; };
 
 const state = {
   tau: 24.8,
+  lightSensitivity: 1, // multiplies all light the clock sees
+  noise: false, // day-to-day wobble in lights on/off
   lightsOn: 7,
   lightsOff: 23,
   dayLux: 125, // typical home light at eye level
@@ -36,6 +40,7 @@ const state = {
   melSettles: null, // whether the clock settled with or without it (for that note)
   exHelps: null, // same two for exercise
   exSettles: null,
+  startOffset: 0, // actogram start: hours the natural wake on day one falls after the goal (lights-on)
   tuneHelps: {}, // per suggestion: true once the model says it helps this day
 };
 
@@ -43,11 +48,13 @@ const melOffered = () => state.tau > MEL_MIN_TAU;
 
 const schedule = () => ({
   tau: state.tau,
+  lightSensitivity: state.lightSensitivity,
   lightsOn: state.lightsOn,
   lightsOff: state.lightsOff,
   dayLux: state.dayLux,
   nightLux: state.nightLux,
   wakeMode: 'enforced',
+  noise: { enabled: state.noise },
   exercise: { ...state.exercise },
   melatonin: { ...state.melatonin, enabled: state.melatonin.enabled && melOffered() },
 });
@@ -98,7 +105,13 @@ function helps(base, next) {
     if (nb > 0 && cn.asleep < cb.asleep - SLEEP_CUT) return false;
   }
   if (nn !== nb) return nn > nb;
-  if (nn === 0) return false;
+  // Neither locks on: a clock that almost holds (scalloping) is helped when it
+  // slips clearly more slowly, i.e. stalls for longer before each slip.
+  if (nn === 0) {
+    if (!base.some((r) => r.scallop)) return false;
+    const rate = (rows) => median(rows.map((r) => Math.abs(r.scallop ? r.scallop.meanDriftMinPerDay : r.driftMinPerDay)));
+    return rate(next) < 0.8 * rate(base);
+  }
   const days = (rows) => median(ok(rows).map((r) => r.daysToEntrain));
   const db = days(base), dn = days(next), rb = DIFFICULTY_RANK[difficulty(cb)[2]], rn = DIFFICULTY_RANK[difficulty(cn)[2]];
   return (dn < db && rn <= rb) || (dn <= db && rn < rb);
@@ -226,6 +239,12 @@ function syncInputs() {
   $('tau-hint').textContent = Math.abs(drift) < 1
     ? t('clock.tau.hint.even')
     : t(drift > 0 ? 'clock.tau.hint.late' : 'clock.tau.hint.early', { min: Math.round(Math.abs(drift)) });
+  const sens = state.lightSensitivity;
+  $('sens').value = Math.log2(sens);
+  $('sens-out').value = t('clock.sens.value', { x: fmtSens(sens) });
+  $('sens-hint').textContent = Math.abs(sens - 1) < 1e-9
+    ? t('clock.sens.hint.typical')
+    : t(sens > 1 ? 'clock.sens.hint.more' : 'clock.sens.hint.less', { x: fmtSens(sens > 1 ? sens : 1 / sens) });
   $('lights-on').value = fmtTimeValue(state.lightsOn);
   $('lights-off').value = fmtTimeValue(state.lightsOff);
   const tier = lightTier(state.dayLux);
@@ -246,8 +265,11 @@ function bindInputs() {
     // Melatonin is only offered for a long period; switch it off when hidden.
     if (!melOffered() && state.melatonin.enabled) { state.melatonin.enabled = false; $('mel-on').checked = false; }
   });
+  // The slider is log2 of the multiplier, so 1× sits in the middle.
+  on('sens', 'input', (t) => { state.lightSensitivity = 2 ** Number(t.value); });
   on('lights-on', 'change', (t) => { if (t.value) state.lightsOn = parseTime(t.value); });
   on('lights-off', 'change', (t) => { if (t.value) state.lightsOff = parseTime(t.value); });
+  on('noise-on', 'change', (t) => { state.noise = t.checked; });
   on('ex-on', 'change', (t) => { state.exercise.enabled = t.checked; });
   // Suggestions apply their change to the day (see tuneChanges).
   for (const k of ['night', 'dim', 'bright']) {
@@ -358,7 +380,9 @@ function renderMelatonin() {
 // fighting sleep or sitting in the dark for most of it.
 const unliveable = (c) => c.asleep < 4.5 || c.fighting > 10 || c.dim > 8;
 
-function renderVerdict(starts, example, cost) {
+// goal: the run started the day natural wake-up lands on lights-on (the default
+// assumption, after Larroque's VLiDACMel protocol); its days lead the verdict.
+function renderVerdict(starts, example, cost, goal = example) {
   const ok = starts.filter((r) => r.entrained);
   const pill = $('pill');
   const stats = [];
@@ -369,12 +393,16 @@ function renderVerdict(starts, example, cost) {
     $('tab-status').textContent = t(status);
     $('verdict-main').innerHTML = html(key, vars);
   };
-  if (ok.length === 0) {
+  const scallop = goal.scallop ?? null;
+  if (ok.length === 0 && scallop) {
+    set('some', 'verdict.status.scallop', 'verdict.scallop', { clock: fmtClock(scallop.stallClock), stall: scallop.stallDays, every: scallop.slipEveryDays });
+  } else if (ok.length === 0) {
     set('no', 'verdict.status.no', 'verdict.no', { drift: driftText(median(starts.map((r) => r.driftMinPerDay))) });
   } else {
     const d = ok.map((r) => r.daysToEntrain);
     const slowest = Math.max(...d);
-    const days = t('range.days', { n: slowest });
+    const goalDays = goal.entrainment.entrained ? goal.entrainment.daysToEntrain : null;
+    const days = t('range.days', { n: goalDays ?? slowest });
     const dlmo = circMean(ok.map((r) => r.dlmoClock));
     if (unliveable(cost.late)) {
       set('no', 'verdict.status.unliveable', 'verdict.unliveable', {});
@@ -387,7 +415,8 @@ function renderVerdict(starts, example, cost) {
     } else {
       set('ok', 'verdict.status.ok', 'verdict.ok', { days, dlmo: fmtClock(dlmo) });
     }
-    stats.push([t('stats.daysToEntrain'), t('range.upTo', { n: slowest })], [t('stats.typical'), t('range.days', { n: median(d) })], [t('stats.dlmo'), fmtClock(dlmo)]);
+    if (goalDays !== null) stats.push([t('stats.fromGoal'), t('range.days', { n: goalDays })]);
+    stats.push([t('stats.anyStart'), t('range.upTo', { n: slowest })], [t('stats.dlmo'), fmtClock(dlmo)]);
   }
   if (example.sleepSummary && example.entrainment.entrained) {
     const m = Math.round(example.sleepSummary.hoursPerDay * 12) * 5; // nearest 5 min
@@ -507,17 +536,67 @@ function renderMain() {
   // Legend entries only for what the shown run actually includes.
   $('legend-ex').hidden = !lastResult.schedule.exercise?.enabled;
   $('legend-mel').hidden = !lastResult.schedule.melatonin?.enabled;
-  const view = { ...lastResult, days: Math.min(state.days, lastResult.days) };
+  const shown = shownResult ?? lastResult;
+  const view = { ...shown, days: Math.min(state.days, shown.days) };
   drawActogram($('actogram'), view);
 }
 
-// The run shown in the actogram: the start whose days-to-entrain is the median
-// (or the first start, if none entrain).
-function exampleStart(starts) {
-  const ok = starts.filter((r) => r.entrained);
-  if (!ok.length) return starts[0].startDlmoClock;
-  const m = median(ok.map((r) => r.daysToEntrain));
-  return ok.find((r) => r.daysToEntrain === m).startDlmoClock;
+// ---------- starting day ----------
+
+// The actogram shows one run. By default it starts the day the free-running
+// clock naturally wakes you at lights-on; the arrows move that start an hour
+// at a time (natural wake that much earlier or later on day one).
+let shownResult = null;
+// 24 one-hour starts, -11 .. +12 h; the arrows wrap round the cycle.
+const MAX_OFFSET = 11;
+const wrapOffset = (k) => mod(k + MAX_OFFSET, 24) - MAX_OFFSET;
+
+function showStart() {
+  if (!lastSchedule) return;
+  const s = lastSchedule, k = state.startOffset;
+  shownResult = k === 0 ? goalResult : simulate(s, { startDlmoClock: goalStartDlmo(s, k), days: DAYS });
+  const time = fmtClock(mod(s.lightsOn + k, 24));
+  const key = k === 0 ? 'acto.start.goal' : k > 0 ? 'acto.start.later' : 'acto.start.earlier';
+  const e = shownResult.entrainment;
+  const sc = shownResult.scallop;
+  const tail = e.entrained ? t('acto.start.locks', { n: e.daysToEntrain })
+    : sc ? t('acto.start.scallop', { clock: fmtClock(sc.stallClock), every: sc.slipEveryDays }) : t('acto.start.never');
+  $('ic-label').innerHTML = `${html(key, { time, h: Math.abs(k) })} ${tail}`;
+  renderMain();
+  showActoIntro();
+}
+
+// A one-time overlay on the actogram explaining the arrows. Once dismissed it
+// stays dismissed in this browser (and simply shows again if storage is off).
+// It appears only once the first actogram has been drawn, so there is always
+// a chart underneath to see through it and to reveal on Ok.
+const INTRO_KEY = 'non24.actoIntroSeen';
+let introPending = false;
+function initActoIntro() {
+  let seen = false;
+  try { seen = localStorage.getItem(INTRO_KEY) === '1'; } catch {}
+  if (seen) return;
+  introPending = true;
+  $('acto-intro-ok').addEventListener('click', () => {
+    $('acto-intro').hidden = true;
+    try { localStorage.setItem(INTRO_KEY, '1'); } catch {}
+    renderMain();
+    $('ic-next').focus();
+  });
+}
+function showActoIntro() {
+  if (!introPending) return;
+  introPending = false;
+  $('acto-intro').hidden = false;
+}
+
+function bindStartArrows() {
+  for (const [id, d] of [['ic-prev', -1], ['ic-next', 1]]) {
+    $(id).addEventListener('click', () => {
+      state.startOffset = wrapOffset(state.startOffset + d);
+      showStart();
+    });
+  }
 }
 
 // Where the clock settles from a few starting points: dlmo is the entrained
@@ -674,11 +753,12 @@ async function run() {
   const ex = await gate('exercise', (dlmo) => exerciseShift(mod(s.exercise.start + s.exercise.minutes / 120 - dlmo, 24), s.exercise.minutes));
   if (ex === undefined) return;
   state.exHelps = ex && ex.good; state.exSettles = ex?.settles;
-  const exStart = exampleStart(starts);
-  lastResult = simulate(s, { startDlmoClock: exStart, days: DAYS });
+  lastSchedule = s;
+  goalResult = simulate(s, { startDlmoClock: goalStartDlmo(s), days: DAYS });
+  lastResult = goalResult;
   const cost = costOf(starts);
   lastStarts = starts; lastCost = cost;
-  renderVerdict(starts, lastResult, cost);
+  renderVerdict(starts, lastResult, cost, goalResult);
   const okStarts = starts.filter((r) => r.entrained);
   state.settledDlmo = okStarts.length ? circMean(okStarts.map((r) => r.dlmoClock)) : null;
   // Windows from where the clock settles; if it never does, from a typical DLMO
@@ -690,7 +770,7 @@ async function run() {
   drawDayEditor();
   renderMelatonin();
   renderCost(cost);
-  renderMain();
+  showStart();
   renderPrc(lastResult);
   $('acto-hint').textContent = t('acto.hint');
 
@@ -703,7 +783,7 @@ async function run() {
 // AM/PM or 24-hour times: the viewer's choice if they made one, else their
 // locale's. Switching redraws everything that shows a time from the last run.
 const CLOCK_KEY = 'non24.clock12';
-let lastStarts = null, lastCost = null;
+let lastStarts = null, lastCost = null, lastSchedule = null, goalResult = null;
 
 function initClockFormat() {
   let saved = null;
@@ -717,9 +797,9 @@ function initClockFormat() {
       syncInputs();
       drawDayEditor();
       if (!lastResult) return;
-      renderVerdict(lastStarts, lastResult, lastCost);
+      renderVerdict(lastStarts, lastResult, lastCost, goalResult);
       renderCost(lastCost);
-      renderMain();
+      showStart();
       renderPrc(lastResult);
     });
   }
@@ -743,4 +823,6 @@ syncInputs();
 drawDayEditor();
 bindInputs();
 bindPanes();
+bindStartArrows();
+initActoIntro();
 run();

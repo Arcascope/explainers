@@ -44,6 +44,12 @@
       </label>
       <input id="tau" type="range" min="23.5" max="26" step="0.05" value="24.8">
       <p class="hint" id="tau-hint"></p>
+      <label class="field" for="sens">
+        <span class="field-label" data-copy="clock.sens.label"></span>
+        <span class="field-value"><output id="sens-out" for="sens"></output></span>
+      </label>
+      <input id="sens" type="range" min="-2" max="2" step="0.25" value="0">
+      <p class="hint" id="sens-hint"></p>
     </fieldset>
 
     <fieldset class="group">
@@ -76,6 +82,8 @@
         </div>
       </div>
       <p class="hint" data-copy="day.dim.hint"></p>
+      <label class="toggle" for="noise-on"><input id="noise-on" type="checkbox"><span data-copy="day.noise.toggle"></span></label>
+      <p class="hint" data-copy="day.noise.hint"></p>
     </fieldset>
 
     <fieldset class="group">
@@ -131,7 +139,18 @@
         <label for="days" data-copy="acto.days"></label>
         <select id="days"><option>14</option><option selected>30</option><option>60</option><option>90</option></select>
       </div>
-      <div class="acto-wrap"><canvas id="actogram" data-copy-aria="acto.aria"></canvas></div>
+      <div class="acto-nav" id="acto-nav">
+        <div class="acto-intro" id="acto-intro" role="dialog" aria-labelledby="acto-intro-text" hidden>
+          <div class="acto-intro-card">
+            <p id="acto-intro-text" data-copy="acto.intro.text"></p>
+            <button type="button" class="acto-intro-ok" id="acto-intro-ok" data-copy="acto.intro.ok"></button>
+          </div>
+        </div>
+        <button type="button" class="acto-arrow" id="ic-prev" data-copy-aria="acto.start.prev"><span aria-hidden="true">‹</span></button>
+        <div class="acto-wrap"><canvas id="actogram" data-copy-aria="acto.aria"></canvas></div>
+        <button type="button" class="acto-arrow" id="ic-next" data-copy-aria="acto.start.next"><span aria-hidden="true">›</span></button>
+      </div>
+      <p class="hint acto-start" id="ic-label" aria-live="polite"></p>
     </div>
     <div class="panel cost" id="cost" aria-live="polite">
       <div class="panel-head">
@@ -202,6 +221,7 @@
       <div>
         <h4 data-copy="method.entrain.title"></h4>
         <p data-copy="method.entrain.p1"></p>
+        <p data-copy="method.entrain.p3"></p>
         <p data-copy="method.entrain.p2"></p>
       </div>
     </div>
@@ -209,6 +229,7 @@
     <ul class="refs">
       <li data-copy="sources.skeldon"></li>
       <li data-copy="sources.youngstedt"></li>
+      <li data-copy="sources.larroque"></li>
       <li data-copy="sources.burgess"></li>
       <li data-copy="sources.emens"></li>
       <li data-copy="sources.circadian"></li>
