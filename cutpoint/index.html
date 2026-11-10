@@ -1,0 +1,144 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#e9e7e4">
+<!-- All visible text comes from copy.md (see js/copy.js). The title and
+     description here are fallbacks for link previews; copy.md overrides them. -->
+<title>Cut-point choice</title>
+<meta name="description" content="A simulation of immunotherapy outcomes in which survival does not depend on infusion time, showing how the choice of a morning/afternoon cut-point affects whether a time-of-day difference appears.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Merriweather:ital,wght@0,300;0,400;1,300&family=Work+Sans:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<header class="masthead">
+  <div class="wrap">
+    <h1 data-copy="hero.title"></h1>
+    <p class="lede" data-copy="hero.lede"></p>
+  </div>
+</header>
+
+<main class="wrap layout">
+
+  <div class="left">
+    <div class="panel">
+      <fieldset>
+        <legend data-copy="cut.legend"></legend>
+        <label class="field" for="cut"><span data-copy="cut.label"></span><output id="cut-out" for="cut"></output></label>
+        <input id="cut" type="range" min="9" max="18" step="0.25" value="13">
+        <p class="hint" data-copy="cut.hint"></p>
+        <button type="button" class="btn" id="lowest"></button>
+      </fieldset>
+    </div>
+
+    <div class="panel">
+      <fieldset>
+        <legend data-copy="data.legend"></legend>
+        <div class="btn-row">
+          <button type="button" class="btn primary" id="new" data-copy="data.new"></button>
+          <button type="button" class="btn" id="batch" data-copy="data.batch"></button>
+        </div>
+        <p class="hint" data-copy="data.hint"></p>
+        <label class="field" for="effect"><span data-copy="effect.label"></span><output id="effect-out" for="effect"></output></label>
+        <input id="effect" type="range" min="1" max="1.3" step="0.01" value="1">
+        <p class="hint" data-copy="effect.hint"></p>
+        <p class="hint pending" id="effect-pending" hidden></p>
+      </fieldset>
+    </div>
+
+    <div class="panel">
+      <h2 class="panel-title" data-copy="tally.heading"></h2>
+      <p class="hint" id="tally-scope"></p>
+      <dl class="tally">
+        <dt data-copy="tally.datasets"></dt><dd id="t-n"></dd>
+        <dt data-copy="tally.morning"></dt><dd id="t-m"></dd>
+        <dt data-copy="tally.afternoon"></dt><dd id="t-a"></dd>
+        <dt data-copy="tally.neither"></dt><dd id="t-x"></dd>
+      </dl>
+      <button type="button" class="btn small" id="reset" data-copy="tally.reset"></button>
+      <p class="hint note" data-copy="tally.note"></p>
+    </div>
+  </div>
+
+  <div class="right">
+    <div class="status" id="status" aria-live="polite">
+      <span class="big" id="status-big">&nbsp;</span>
+      <span class="sub" id="status-sub">&nbsp;</span>
+      <span class="sub" id="status-data">&nbsp;</span>
+    </div>
+
+    <div class="km-row">
+      <div class="panel">
+        <h2 class="panel-title" data-copy="km.pfs"></h2>
+        <figure><svg id="km-pfs" viewBox="0 0 400 230" role="img" data-copy-aria="km.aria"></svg></figure>
+        <div class="km-foot"><span class="readout" id="ro-pfs"></span></div>
+      </div>
+      <div class="panel">
+        <h2 class="panel-title" data-copy="km.os"></h2>
+        <figure><svg id="km-os" viewBox="0 0 400 230" role="img" data-copy-aria="km.aria"></svg></figure>
+        <div class="km-foot"><span class="readout" id="ro-os"></span></div>
+      </div>
+    </div>
+    <ul class="legend">
+      <li><i class="sw sw-morning"></i><span id="lg-m"></span></li>
+      <li><i class="sw sw-afternoon"></i><span id="lg-a"></span></li>
+    </ul>
+
+    <div class="panel">
+      <h2 class="panel-title" data-copy="hist.heading"></h2>
+      <p class="hint" data-copy="hist.hint"></p>
+      <figure><svg id="hist" viewBox="0 0 820 150" role="img" data-copy-aria="hist.aria"></svg></figure>
+    </div>
+
+    <div class="panel">
+      <h2 class="panel-title" data-copy="scan.heading"></h2>
+      <p class="hint" data-copy="scan.hint"></p>
+      <figure><svg id="scan" viewBox="0 0 820 200" role="img" data-copy-aria="scan.aria"></svg></figure>
+      <ul class="legend">
+        <li><i class="dot dot-morning"></i><span data-copy="scan.legend.morning"></span></li>
+        <li><i class="dot dot-afternoon"></i><span data-copy="scan.legend.afternoon"></span></li>
+      </ul>
+    </div>
+  </div>
+
+  <section class="panel method" aria-labelledby="method-h">
+    <h2 id="method-h" data-copy="method.heading"></h2>
+    <div class="cols">
+      <div>
+        <h3 data-copy="method.patients.title"></h3>
+        <p data-copy="method.patients.p1"></p>
+        <p data-copy="method.patients.p2"></p>
+      </div>
+      <div>
+        <h3 data-copy="method.times.title"></h3>
+        <p data-copy="method.times.p1"></p>
+        <p data-copy="method.times.p2"></p>
+      </div>
+      <div>
+        <h3 data-copy="method.groups.title"></h3>
+        <p data-copy="method.groups.p1"></p>
+      </div>
+      <div>
+        <h3 data-copy="method.why.title"></h3>
+        <p data-copy="method.why.p1"></p>
+      </div>
+      <div>
+        <h3 data-copy="method.effect.title"></h3>
+        <p data-copy="method.effect.p1"></p>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer class="wrap">
+  <p id="footer-data"></p>
+  <p data-copy="footer.source"></p>
+</footer>
+
+<script type="module" src="js/app.js"></script>
+</body>
+</html>

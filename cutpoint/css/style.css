@@ -1,0 +1,126 @@
+/* Same paper and type as the amplitude explainer: Merriweather Light display,
+   Work Sans body. Morning is a slate blue, afternoon a muted gold; nothing on
+   the page changes color to signal a "result".
+   Layout: controls and the tally on the left, curves and charts on the right,
+   method notes across the bottom. */
+:root {
+  color-scheme: light;
+  --paper: #e9e7e4;
+  --paper-2: #f3f1ef;
+  --surface: #fdfcfb;
+  --rule: #cfcbc6;
+  --rule-2: #dedad5;
+  --ink: #23201d;
+  --ink-2: #4e4943;
+  --ink-3: #7d766e;
+  --accent: #6b6259;
+  --morning: #39506b;
+  --afternoon: #b07d12;
+  --untested: #c4beb6;
+  --bar: #b9b2a9;
+  --font-display: "Merriweather", Georgia, serif;
+  --font-body: "Work Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html, body { overflow-x: clip; }
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font: 14.5px/1.5 var(--font-body);
+  -webkit-font-smoothing: antialiased;
+}
+.wrap {
+  max-width: 1240px; margin: 0 auto;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+h1, h2 { font-family: var(--font-display); font-weight: 300; margin: 0; text-wrap: balance; letter-spacing: -0.01em; }
+h1 { font-size: clamp(25px, 3.4vw, 34px); line-height: 1.1; }
+h2 { font-size: clamp(19px, 2.3vw, 23px); }
+h3 { font-size: 14.5px; font-weight: 600; margin: 0 0 6px; color: var(--ink); }
+p { margin: 0 0 12px; }
+em { font-style: italic; }
+code { font-family: var(--font-mono); font-size: .88em; color: var(--ink-2); }
+a { color: var(--ink-2); text-underline-offset: 3px; }
+a:hover { color: var(--ink); }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.masthead { padding-block: 26px 4px; }
+.lede { color: var(--ink-2); max-width: 70ch; font-size: 14.5px; line-height: 1.5; margin: 9px 0 0; }
+
+.layout { display: grid; gap: 18px; padding-block: 12px 40px; align-items: start; }
+@media (min-width: 940px) { .layout { grid-template-columns: 300px minmax(0, 1fr); } }
+.left, .right { display: grid; gap: 14px; min-width: 0; }
+@media (min-width: 940px) { .left { position: sticky; top: 14px; } }
+
+.panel { background: var(--surface); border: 1px solid var(--rule); border-radius: 4px; padding: 14px; min-width: 0; }
+.panel-title { font-family: var(--font-body); font-size: 14.5px; font-weight: 600; letter-spacing: 0; margin: 0 0 4px; }
+
+fieldset { border: 0; margin: 0; padding: 0; display: grid; gap: 8px; min-width: 0; }
+legend { font-size: 14.5px; font-weight: 600; color: var(--ink); padding: 0 0 4px; }
+.field { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; font-size: 13.5px; }
+.field output { font-family: var(--font-mono); font-variant-numeric: tabular-nums; color: var(--ink); }
+input[type="range"] { width: 100%; accent-color: var(--accent); margin: 0; }
+.hint { font-size: 12.5px; color: var(--ink-3); margin: 0; }
+.hint.pending { color: var(--ink-2); }
+.hint.note { margin-top: 10px; }
+
+.btn {
+  background: var(--paper-2); color: var(--ink-2); border: 1px solid var(--rule);
+  border-radius: 3px; padding: 7px 10px; font: inherit; font-size: 13px; cursor: pointer; text-align: center;
+}
+.btn:hover:not(:disabled) { border-color: var(--ink-3); color: var(--ink); }
+.btn:disabled { opacity: .5; cursor: default; }
+.btn.primary { background: var(--ink-2); border-color: var(--ink-2); color: var(--surface); }
+.btn.primary:hover:not(:disabled) { background: var(--ink); color: var(--surface); }
+.btn.small { padding: 4px 9px; font-size: 12.5px; }
+.btn-row { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+
+.tally { display: grid; grid-template-columns: 1fr auto; gap: 6px 12px; margin: 10px 0 12px; font-size: 13px; }
+.tally dt { color: var(--ink-2); }
+.tally dd { margin: 0; font-family: var(--font-mono); font-variant-numeric: tabular-nums; text-align: right; white-space: nowrap; }
+
+.status { border: 1px solid var(--rule); border-left: 3px solid var(--ink-3); border-radius: 4px; padding: 11px 13px; background: var(--paper-2); }
+.status .big { font-family: var(--font-display); font-size: 19px; line-height: 1.25; display: block; }
+.status .sub { font-size: 13px; color: var(--ink-2); display: block; margin-top: 4px; }
+
+.km-row { display: grid; gap: 14px; }
+@media (min-width: 640px) { .km-row { grid-template-columns: 1fr 1fr; } }
+.km-foot { display: flex; justify-content: flex-end; margin-top: 4px; }
+.readout { font-family: var(--font-mono); font-size: 12.5px; color: var(--ink-2); font-variant-numeric: tabular-nums; }
+
+.legend { list-style: none; display: flex; flex-wrap: wrap; gap: 6px 18px; margin: 0; padding: 0 2px; font-size: 12.5px; color: var(--ink-2); }
+.panel .legend { margin-top: 8px; }
+.legend li { display: flex; align-items: center; gap: 7px; }
+.sw { display: inline-block; width: 16px; height: 2.5px; border-radius: 1px; }
+.sw-morning { background: var(--morning); }
+.sw-afternoon { background: var(--afternoon); }
+.dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; }
+.dot-morning { background: var(--morning); }
+.dot-afternoon { background: var(--afternoon); }
+
+figure { margin: 6px 0 0; }
+svg { display: block; width: 100%; height: auto; }
+svg text { font-family: var(--font-body); font-size: 11px; fill: var(--ink-3); }
+svg .axis { stroke: var(--rule); stroke-width: 1; }
+svg .grid { stroke: var(--rule-2); stroke-width: 1; }
+svg .cutline { stroke: var(--ink); stroke-width: 1.5; }
+svg .alpha { stroke: var(--ink-3); stroke-width: 1; stroke-dasharray: 4 4; }
+#scan { cursor: pointer; }
+/* The wide charts shrink a lot on phones; scale their labels back up. */
+@media (max-width: 640px) {
+  #hist text, #scan text { font-size: 20px; }
+}
+
+.method { grid-column: 1 / -1; }
+.method h2 { margin-bottom: 14px; }
+.method .cols { display: grid; gap: 6px 28px; }
+@media (min-width: 720px) { .method .cols { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (min-width: 1100px) { .method .cols { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+.method p { font-size: 13.5px; color: var(--ink-2); max-width: 62ch; }
+
+footer { border-top: 1px solid var(--rule); padding-block: 18px 40px; color: var(--ink-3); font-size: 12.5px; }
+footer p { max-width: 76ch; margin-bottom: 6px; }
